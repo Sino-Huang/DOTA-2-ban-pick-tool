@@ -1,4 +1,6 @@
 # DOTA 2 ban pick tool 
+> [!WARNING]
+> App not setup: This app is still in development mode 
 
 ## Purpose 
 - User friendly and newbee friendly DOTA 2 ban pick tool. 
