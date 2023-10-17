@@ -1,0 +1,30 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8"
+    },
+    "python.languageServer": "Pylance",
+    "psi-header.variables": [
+        ["projectCreationYear", "2023"],
+        ["authoremail", "huangsukai1997@gmail.com"],
+        ["projectname", "DOTA 2 BanPick Tool"],
+        ["company", "Sukai@Community Project"],
+    ],
+    "psi-header.templates": [
+        {
+            "language": "*",
+            "template": [
+                "File Created: <<filecreated('dddd, Do MMMM YYYY h:mm:ss a')>>",
+                "Author: <<author>> (<<authoremail>>)",
+                "-----",
+                "Last Modified: <<dateformat('dddd, Do MMMM YYYY h:mm:ss a')>>",
+                "Modified By: <<author>> (<<authoremail>>>)",
+                "-----",
+                "Copyright <<projectCreationYear>> - <<year>> by <<company>>",
+                "All rights reserved.",
+                "This file is part of The <<projectname>> Project,",
+                "and is released under The MIT License. Please see the LICENSE",
+                "file that should have been included as part of this project."
+            ]
+        }
+    ],
+}

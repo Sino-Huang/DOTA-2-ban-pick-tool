@@ -30,7 +30,8 @@
     - mid should focus more on countering mid
     - pos 1 should focus more on countering pos 3 and then pos 1
     - pos 3 should focus more on countering pos 1 and then pos 2
-    - pos 4 and pos 5 should focus more on countering pos 1 and pos 2
+    - pos 4 should focus more on countering pos 1 and pos 2
+    - pos 5 should focus more on countering pos 3 
 - alpha beta pruning 
   - find the optimal solution under the assumption that the opponents are also trying their hard to do the hero drafting
 
