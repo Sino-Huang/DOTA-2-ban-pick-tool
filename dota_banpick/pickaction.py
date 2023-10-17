@@ -565,13 +565,13 @@ if __name__ == "__main__":
     start_node = StateNode(*ally_hero_pools, *opponent_hero_pools)
     output_next_nodes_dict, pick_choice_combo_dict = start_node.next_possible_nodes()
     
-start_node.add_hero('Axe', True, 3).add_hero('Bane', False, 3)
-start_node.add_hero('Axe', True, 3).add_hero('Bane', True, 4).ban_hero('Bane')
-next_node = output_next_nodes_dict[str([3,5])][5]
-next_node.add_hero("Visage", False, 1).add_hero("Elder Titan", False, 2).add_hero("Abaddon", True, 1)\
-    .add_hero("Anti-Mage", True, 2).add_hero("Arc Warden", False, 3).add_hero("Bristleback", False, 4)
-next_node.add_hero("Broodmother", True, 4)
-next_node.add_hero("Broodmother", True, 4).ban_hero('Broodmother')
-next_node.add_hero("Broodmother", True, 4).ban_hero('Broodmother')
-output_next_nodes_dict, pick_choice_combo_dict = next_node.next_possible_nodes()
-output_next_nodes_dict['[4]']
+# start_node.add_hero('Axe', True, 3).add_hero('Bane', False, 3)
+# start_node.add_hero('Axe', True, 3).add_hero('Bane', True, 4).ban_hero('Bane')
+# next_node = output_next_nodes_dict[str([3,5])][5]
+# next_node.add_hero("Visage", False, 1).add_hero("Elder Titan", False, 2).add_hero("Abaddon", True, 1)\
+#     .add_hero("Anti-Mage", True, 2).add_hero("Arc Warden", False, 3).add_hero("Bristleback", False, 4)
+# next_node.add_hero("Broodmother", True, 4)
+# next_node.add_hero("Broodmother", True, 4).ban_hero('Broodmother')
+# next_node.add_hero("Broodmother", True, 4).ban_hero('Broodmother')
+# output_next_nodes_dict, pick_choice_combo_dict = next_node.next_possible_nodes()
+# output_next_nodes_dict['[4]']
