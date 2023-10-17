@@ -14,3 +14,4 @@ file that should have been included as part of this project.
 
 # this file implements the alpha beta pruning method 
 
+# need a function to detect whether need to run alpha beta 

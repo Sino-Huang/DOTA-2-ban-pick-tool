@@ -149,12 +149,30 @@ class StateNode:
                 return self
             else:
                 # pick same hero situation, remove that hero
-                hero_pick_round_list[ban_hero_index] = 0
-                hero_list[ban_hero_index] = None
+
+                if ban_hero_index == 0:
+                    self.ally_pos_1_hero = None
+                    self.ally_pos_1_pick_round = 0
+
+                elif ban_hero_index == 1:
+                    self.ally_pos_2_hero = None
+                    self.ally_pos_2_pick_round = 0
+                elif ban_hero_index == 2:
+                    self.ally_pos_3_hero = None
+                    self.ally_pos_3_pick_round = 0
+                elif ban_hero_index == 3:
+                    self.ally_pos_4_hero = None
+                    self.ally_pos_4_pick_round = 0
+                elif ban_hero_index == 4:
+                    self.ally_pos_5_hero = None
+                    self.ally_pos_5_pick_round = 0
+                if self.cur_round == 5: # ! for round 5, if pick same hero, we can treat it like we just finish round 4
+                    self.cur_round = 4
                 return self
         else:
             # normal ban situation
-            self.ban_lst.append(ban_hero_name)
+            if ban_hero_name not in self.ban_lst:
+                self.ban_lst.append(ban_hero_name)
             return self
 
     def _hero_set(self, hero_name, ind, is_ally):
@@ -162,39 +180,71 @@ class StateNode:
         """
         if ind == 0:
             if is_ally:
+                if self.ally_pos_1_hero is not None:
+                    logging.warning("has already occupied")
+                    return
                 self.ally_pos_1_hero = hero_name
                 self.ally_pos_1_pick_round = self.cur_round
             else:
+                if self.opponent_pos_1_hero is not None:
+                    logging.warning("has already occupied")
+                    return
                 self.opponent_pos_1_hero = hero_name
                 self.opponent_pos_1_pick_round = self.cur_round
         elif ind == 1:
             if is_ally:
+                if self.ally_pos_2_hero is not None:
+                    logging.warning("has already occupied")
+                    return
                 self.ally_pos_2_hero = hero_name
                 self.ally_pos_2_pick_round = self.cur_round
             else:
+                if self.opponent_pos_2_hero is not None:
+                    logging.warning("has already occupied")
+                    return
                 self.opponent_pos_2_hero = hero_name
                 self.opponent_pos_2_pick_round = self.cur_round
         elif ind == 2:
             if is_ally:
+                if self.ally_pos_3_hero is not None:
+                    logging.warning("has already occupied")
+                    return
                 self.ally_pos_3_hero = hero_name
                 self.ally_pos_3_pick_round = self.cur_round
             else:
+                if self.opponent_pos_3_hero is not None:
+                    logging.warning("has already occupied")
+                    return
                 self.opponent_pos_3_hero = hero_name
                 self.opponent_pos_3_pick_round = self.cur_round
         elif ind == 3:
             if is_ally:
+                if self.ally_pos_4_hero is not None:
+                    logging.warning("has already occupied")
+                    return
                 self.ally_pos_4_hero = hero_name
                 self.ally_pos_4_pick_round = self.cur_round
             else:
+                if self.opponent_pos_4_hero is not None:
+                    logging.warning("has already occupied")
+                    return
                 self.opponent_pos_4_hero = hero_name
                 self.opponent_pos_4_pick_round = self.cur_round
         elif ind == 4:
             if is_ally:
+                if self.ally_pos_5_hero is not None:
+                    logging.warning("has already occupied")
+                    return
                 self.ally_pos_5_hero = hero_name
                 self.ally_pos_5_pick_round = self.cur_round
             else:
+                if self.opponent_pos_5_hero is not None:
+                    logging.warning("has already occupied")
+                    return
                 self.opponent_pos_5_hero = hero_name
                 self.opponent_pos_5_pick_round = self.cur_round
+        # add name to ban list
+        self.ban_lst.append(hero_name)
 
     def add_hero(self, hero_name, is_ally, position):
         """add hero to either ally or opponent
@@ -221,11 +271,10 @@ class StateNode:
         ]
         # check is available
         if hero_name in self.ban_lst:
-            logging.warning("hero is not available already")
+            logging.warning(f"hero {hero_name} is not available already")
             return self
 
-        # add name to ban list
-        self.ban_lst.append(hero_name)
+        
         if is_ally:
             # two sit, one is to progress to new round, the other is to achieve current round
             # check if progress to new round
@@ -234,10 +283,12 @@ class StateNode:
                 # ally hero update
                 self._hero_set(hero_name, position_index, is_ally)
 
+
             # check if achieve current round
             elif self.cur_round in [1, 3] and ally_hero_pick_round_list.count(self.cur_round) == 1:
                 # ally hero update
                 self._hero_set(hero_name, position_index, is_ally)
+
             else:
                 logging.warning("invalid add ally hero case")
 
@@ -248,15 +299,18 @@ class StateNode:
                 self.cur_round += 1
                 # opponent hero update
                 self._hero_set(hero_name, position_index, is_ally)
+
             # new round case 2
             elif self.cur_round in [5] and ally_hero_pick_round_list.count(self.cur_round) == 1:
                 self.cur_round += 1
                 # opponent hero update
                 self._hero_set(hero_name, position_index, is_ally)
+
             # check if achieve current round
             elif self.cur_round in [2, 4] and opponent_hero_pick_round_list.count(self.cur_round) == 1:
                 # opponent hero update
                 self._hero_set(hero_name, position_index, is_ally)
+
             else:
                 logging.warning("invalid add opponent hero case")
 
@@ -277,8 +331,18 @@ class StateNode:
 
         is_ally_next_turn = None
         hero_list = None
+        
+        ally_hero_pick_round_list = [self.ally_pos_1_pick_round,
+                                     self.ally_pos_2_pick_round,
+                                     self.ally_pos_3_pick_round,
+                                     self.ally_pos_4_pick_round,
+                                     self.ally_pos_5_pick_round]
+        
+        
         # get available hero pools
         if self.cur_round in [0, 2, 4]:
+            is_ally_next_turn = True
+        elif self.cur_round in [1,3] and ally_hero_pick_round_list.count(self.cur_round) == 1:
             is_ally_next_turn = True
         else:
             is_ally_next_turn = False
@@ -314,6 +378,8 @@ class StateNode:
                 self.opponent_pos_3_hero,
                 self.opponent_pos_4_hero,
                 self.opponent_pos_5_hero]
+            
+        
 
         # filter available hero pools
         filtered_hero_pool_lst = []
@@ -329,15 +395,40 @@ class StateNode:
         next_round = self.cur_round + 1
         # structure: {pick_choice: [(hero_1, hero_2)]}, later flatten it to have list of nodes
         pick_choice_combo_dict = dict()
+        
+        # consider pick same hero situation 
+        pick_same_hero_sit_flag = False
+        if self.cur_round in [1,3] and ally_hero_pick_round_list.count(self.cur_round) == 1:
+            # we set a flag and some mods 
+            pick_same_hero_sit_flag = True
+            next_round = self.cur_round # next round is still cur_round though we fix one hero input
+            
+            fix_hero_pos_ind = ally_hero_pick_round_list.index(self.cur_round)
+            fix_hero = hero_list[fix_hero_pos_ind]
+            fix_hero_pos = fix_hero_pos_ind + 1
+            
+            
+        # normal case
         if next_round in [1, 2]:
             # you can only pick under restriction
             for pick_choice in first_round_pick_choice:
+                if pick_same_hero_sit_flag:
+                    if fix_hero_pos not in pick_choice: # skip choice where we do not have fix hero pos 
+                        continue
                 pc_sorted = sorted(pick_choice)
-
+                if pick_same_hero_sit_flag:
+                    fix_hero_pos_local_ind = pc_sorted.index(fix_hero_pos)
                 pick_indexs = [x - 1 for x in pc_sorted]  # pythonic index
                 assert len(pick_indexs) == 2
                 hero_pool_a = filtered_hero_pool_lst[pick_indexs[0]]
                 hero_pool_b = filtered_hero_pool_lst[pick_indexs[1]]
+                
+                if pick_same_hero_sit_flag:
+                    if fix_hero_pos_local_ind == 0:
+                        hero_pool_a = [fix_hero]
+                    else:
+                        hero_pool_b = [fix_hero]
+                        
                 hero_pick_combo_list = [
                     (a, b) for a in hero_pool_a for b in hero_pool_b if a != b]
                 pick_choice_combo_dict[str(pc_sorted)] = hero_pick_combo_list
@@ -353,12 +444,24 @@ class StateNode:
             round_pick_choice = list(
                 itertools.combinations(available_pos_lst, 2))
             for pick_choice in round_pick_choice:
+                if pick_same_hero_sit_flag:
+                    if fix_hero_pos not in pick_choice: # skip choice where we do not have fix hero pos 
+                        continue
                 pc_sorted = sorted(pick_choice)
-
+                if pick_same_hero_sit_flag:
+                    fix_hero_pos_local_ind = pc_sorted.index(fix_hero_pos)
+                    
                 pick_indexs = [x - 1 for x in pc_sorted]  # pythonic index
                 assert len(pick_indexs) == 2
                 hero_pool_a = filtered_hero_pool_lst[pick_indexs[0]]
                 hero_pool_b = filtered_hero_pool_lst[pick_indexs[1]]
+                
+                if pick_same_hero_sit_flag:
+                    if fix_hero_pos_local_ind == 0:
+                        hero_pool_a = [fix_hero]
+                    else:
+                        hero_pool_b = [fix_hero]
+                
                 hero_pick_combo_list = [
                     (a, b) for a in hero_pool_a for b in hero_pool_b if a != b]
                 pick_choice_combo_dict[str(pc_sorted)] = hero_pick_combo_list
@@ -378,7 +481,7 @@ class StateNode:
             pick_indexs = [x - 1 for x in pc_sorted]  # pythonic index
             assert len(pick_indexs) == 1
             hero_pool_a = filtered_hero_pool_lst[pick_indexs[0]]
-            hero_pick_combo_list = [(a) for a in hero_pool_a]
+            hero_pick_combo_list = [(a,) for a in hero_pool_a]
             pick_choice_combo_dict[str(pc_sorted)] = hero_pick_combo_list
 
         # now we have the pick_choice_combo_dict, flatten it and generate new nodes. also return pick_choice_combo_dict
@@ -392,11 +495,15 @@ class StateNode:
                 # create new node
                 new_node = self.__copy__()
                 for ind, pos in enumerate(pos_pick_choice):
+                    if pick_same_hero_sit_flag: # add already if pick same hero sit
+                        if pos == fix_hero_pos:
+                            continue
                     new_node.add_hero(
                         hero_name=combo[ind], is_ally=is_ally_next_turn, position=pos)
                 output_next_nodes_dict[str_pos_pick_choice].append(new_node)
                 node_expansion_count += 1
         logging.info(f"node expansion with size {node_expansion_count}")
+        
         return output_next_nodes_dict, pick_choice_combo_dict
 
     def is_terminated(self):
@@ -435,6 +542,7 @@ class StateNode:
         output += "Oppo:\n"
         for hero in opponent_hero_lst:
             output += f"\t{hero}\n"
+        output += f"Current Round: {self.cur_round}\n"
         return output
 
 if __name__ == "__main__":
@@ -456,3 +564,14 @@ if __name__ == "__main__":
 
     start_node = StateNode(*ally_hero_pools, *opponent_hero_pools)
     output_next_nodes_dict, pick_choice_combo_dict = start_node.next_possible_nodes()
+    
+start_node.add_hero('Axe', True, 3).add_hero('Bane', False, 3)
+start_node.add_hero('Axe', True, 3).add_hero('Bane', True, 4).ban_hero('Bane')
+next_node = output_next_nodes_dict[str([3,5])][5]
+next_node.add_hero("Visage", False, 1).add_hero("Elder Titan", False, 2).add_hero("Abaddon", True, 1)\
+    .add_hero("Anti-Mage", True, 2).add_hero("Arc Warden", False, 3).add_hero("Bristleback", False, 4)
+next_node.add_hero("Broodmother", True, 4)
+next_node.add_hero("Broodmother", True, 4).ban_hero('Broodmother')
+next_node.add_hero("Broodmother", True, 4).ban_hero('Broodmother')
+output_next_nodes_dict, pick_choice_combo_dict = next_node.next_possible_nodes()
+output_next_nodes_dict['[4]']
