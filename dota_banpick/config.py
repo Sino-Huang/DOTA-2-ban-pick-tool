@@ -12,11 +12,13 @@ and is released under The MIT License. Please see the LICENSE
 file that should have been included as part of this project.
 '''
 
+NODE_EXPANSION_LIMIT = 9999
+DEPTH_LIMIT = 999
 
-FIRST_ROUND_PICK_CHOICE = [
-    (4, 5),
-    (4, 3),
-    (5, 3)
+FIRST_ROUND_PICK_CHOICE = [ # need to be in ascending order
+    [4, 5],
+    [3, 4],
+    [3, 5]
 ]
 DEFAULT_COUNTER_TEMPERATURE = 0.8
 COUNTER_WEIGHT = 1.0 # increase if we want to focus more on countering the opponents rather than hero combo
