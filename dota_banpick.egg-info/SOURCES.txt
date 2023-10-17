@@ -1,0 +1,7 @@
+pyproject.toml
+readme.md
+dota_banpick.egg-info/PKG-INFO
+dota_banpick.egg-info/SOURCES.txt
+dota_banpick.egg-info/dependency_links.txt
+dota_banpick.egg-info/requires.txt
+dota_banpick.egg-info/top_level.txt

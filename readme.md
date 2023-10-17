@@ -17,11 +17,25 @@
   - there will be no collisions in the position 
   - hero combo will be also considered in addition to hero counter
   - specialised for All Pick mode
+    - first round: 
+      - pos 4 5 pick
+      - pos 4 3 pick
+      - pos 5 3 pick
 
 
 ## Algorithm 
-- advantage maximization 
-- alpha beta pruning (future work)
+- objective: greedy winrate maximization 
+  - the advantage value will be the sum of the hero's winrate versus the opponents plus the winrate with allies, the weight for versus advantage varies as follows: 
+  - tuning versus advantage weight:
+    - mid should focus more on countering mid
+    - pos 1 should focus more on countering pos 3 and then pos 1
+    - pos 3 should focus more on countering pos 1 and then pos 2
+    - pos 4 and pos 5 should focus more on countering pos 1 and pos 2
+- alpha beta pruning 
+  - find the optimal solution under the assumption that the opponents are also trying their hard to do the hero drafting
+
+## UI
+- similar to https://www.opendota.com/combos but also add ban button as well as the position flag
 
 ## Deployment 
 - Flask web app will be deployed. 
@@ -31,3 +45,4 @@
 
 ## Promise
 - The banpick app will be updated to suit new patches as long as the authors still play DOTA 2 
+
