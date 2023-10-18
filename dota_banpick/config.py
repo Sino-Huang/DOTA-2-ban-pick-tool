@@ -16,8 +16,8 @@ COUNTER_WEIGHT = 1.2 # increase if we want to focus more on countering the oppon
                      # try 0.1 interval 
 
 NODE_EXPANSION_LIMIT = 9999
-DEPTH_LIMIT = 1
-SUGGESTION_NUM = 4 
+DEPTH_LIMIT = 1 # you cannot have it more than 2,, for real time speed up, set it to 1
+SUGGESTION_NUM = 20
 
 FIRST_ROUND_PICK_CHOICE = [ # need to be in ascending order
     [4, 5],
@@ -25,6 +25,7 @@ FIRST_ROUND_PICK_CHOICE = [ # need to be in ascending order
     [3, 5]
 ]
 PRUNE_WORST_HERO_NUM = 5
+ACTIVATE_SAVING_CACHE = True
 
 DEFAULT_COUNTER_TEMPERATURE = 0.8
 POS_1_COUNTER_TEMPERATURE = [1.1,

@@ -15,9 +15,10 @@ from glob import glob
 import logging
 import os
 import pickle
+import time
 
 from natsort import natsorted
-from config import DEPTH_LIMIT, SUGGESTION_NUM
+from config import ACTIVATE_SAVING_CACHE, DEPTH_LIMIT, PRUNE_WORST_HERO_NUM, SUGGESTION_NUM
 from pickaction import StateNode
 from heuristic import calculate_heuristic
 from tqdm.auto import tqdm
@@ -106,15 +107,44 @@ def support_process_map_func(args):
     alpha_m.value = max(alpha_m.value, next_node_value)
 
 
-def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_limit, cache_dict):
+def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_limit, cache_dict, activate_saving_cache=ACTIVATE_SAVING_CACHE):
 
     if str(node) in cache_dict:
-        return cache_dict[str(node)]
+        if node.cur_round == 0 and depth == 0 and len(node.ban_lst) > 0:
+            # ! consider ban hero counter if cur round = 0
+            # suggested_hero_list structure = [[(hero_1, hero_2), val]]
+            value, suggested_hero_pick_dict = cache_dict[str(node)]
+            for str_pick_choice in suggested_hero_pick_dict:
+                suggested_hero_list = suggested_hero_pick_dict[str_pick_choice]
+                for s_h_l_ind in range(len(suggested_hero_list)):
+                    hero_combo, val = suggested_hero_list[s_h_l_ind]
+                    countered_most_hero_list = set()
+                    for ban_hero in node.ban_lst:
+                        # get counter most top PRUNE_WORST_HERO_NUM
+                        for tind, ct_hero in enumerate(counter_rate_matrix[ban_hero].keys()):
+                            if tind < PRUNE_WORST_HERO_NUM:
+                                countered_most_hero_list.add(ct_hero)
+                            else:
+                                break
+                    for hero in hero_combo:
+                        if hero in countered_most_hero_list:
+                            val += 0.03
+
+                    suggested_hero_list[s_h_l_ind] = [hero_combo, val]
+                # sort it again
+                suggested_hero_list = sorted(
+                    suggested_hero_list, key=lambda x: x[1], reverse=True)
+                suggested_hero_pick_dict[str_pick_choice] = suggested_hero_list
+            return value, suggested_hero_pick_dict
+            # ! -----------------------
+        else:
+            return cache_dict[str(node)]
 
     if depth > depth_limit or node.is_terminated():
         value = calculate_heuristic(
             node, counter_rate_matrix, with_winrate_matrix)
-        cache_dict[str(node)] = (value, None)
+        if activate_saving_cache:
+            cache_dict[str(node)] = (value, None)
         return value, None
 
     output_next_nodes_dict, pick_choice_combo_dict = node.next_possible_nodes()
@@ -156,6 +186,7 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                 value = max(value, max_next_node_value)
 
                 suggested_hero_list = list(suggested_hero_list)
+
                 alpha = alpha_m.value
                 # beta pruning inside map
                 # alpha update inside map
@@ -163,7 +194,7 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                     break_flag = True
 
             else:
-                
+
                 # # ----- thread pool version -----
                 # # threading map for depth > 0
                 # suggested_hero_list = list()
@@ -193,7 +224,6 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                 # if len(break_flag_list) > 0:
                 #     break_flag = True
                 # # --------------------------
-                
 
                 # ------ vanilla loop version -----
 
@@ -217,8 +247,8 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
             suggested_hero_pick_dict[str_pick_choice] = suggested_hero_list
             if break_flag:
                 break
-
-        cache_dict[str(node)] = (value, suggested_hero_pick_dict)
+        if activate_saving_cache:
+            cache_dict[str(node)] = (value, suggested_hero_pick_dict)
 
         return value, suggested_hero_pick_dict
 
@@ -228,7 +258,7 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
         for str_pick_choice, next_node_lst in output_next_nodes_dict.items():
 
             # ------- vanilla loop version -----
-                
+
             for next_node in next_node_lst:
                 next_node_value, _ = alphabeta(
                     next_node, depth + 1, alpha, beta, True, depth_limit, cache_dict)
@@ -266,11 +296,9 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
             # if len(break_flag_list) > 0:
             #     break_flag = True
             # # -----------------------
-            
 
             if break_flag:
                 break
-            
 
         return value, None
 
@@ -278,7 +306,7 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
 if __name__ == "__main__":
     # debug
     logging.basicConfig(
-        format='%(levelname)s:%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.WARNING)
+        format='%(levelname)s:%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
 
     record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
     hero_pool_fps = glob(os.path.join(
@@ -301,6 +329,9 @@ if __name__ == "__main__":
     counter_rate_matrix_fp = os.path.join(
         record_folder, "counter_rate_matrix.pkl")
 
+    warmup_cache_dict_fp = os.path.join(
+        record_folder, "depth_limit_2_warmup_cache_dict.pkl")
+
     with open(versus_winrate_matrix_fp, 'rb') as f:
         versus_winrate_matrix = pickle.load(f)
 
@@ -310,29 +341,37 @@ if __name__ == "__main__":
     with open(counter_rate_matrix_fp, 'rb') as f:
         counter_rate_matrix = pickle.load(f)
 
+    with open(warmup_cache_dict_fp, 'rb') as f:
+        warmup_cache_dict = pickle.load(f)
+
     manager = Manager()
-    alpha_beta_cache_dict = manager.dict()
-    depth_limit = 2
+    alpha_beta_cache_dict = manager.dict(warmup_cache_dict)
+    depth_limit = 1
     # round 5
     # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
     #     .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)\
     #     .add_hero("Arc Warden", True, 3).add_hero("Bristleback", True, 4)\
     #     .add_hero("Tiny", False, 3).add_hero("Axe", False, 4)
 
-    # round 3
-    start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
-        .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)
-    value, suggested_hero_pick_dict = alphabeta(
-        start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict)
-    # save cache
-    print("Save dict ing...")
-    with open(os.path.join(record_folder, f"depth_limit_{depth_limit}_alpha_beta_cache_dict.pkl"), 'wb') as f:
-        pickle.dump(dict(alpha_beta_cache_dict), f)
-    print("Second time with cache")
+    # # round 3
+    # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
+    #     .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)
+
+    # # round 1
+    # start_node = StateNode(*ally_hero_pools, *opponent_hero_pools)
+
+    print("With cache")
     print(f"A Cache size {len(alpha_beta_cache_dict)}")
 
+    start_time = time.time()
     value, suggested_hero_pick_dict = alphabeta(
         start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict)
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time  # in second
+    print("Elapsed time in seconds: ", elapsed_time)
+
+    start_node.ban_hero("Muerta")
 
     # Eval records
     # DEPTH_LIMIT = 1 Round 3 Time: 04:35
@@ -343,4 +382,3 @@ if __name__ == "__main__":
     # DEPTH_LIMIT = 1 Round 3 With Heuristic Cache and Alphabeta pruning Cache with Full Depth save Time: 00:00
     # A Cache size 1068238 with local sort. time 01:18
     # without local sort A Cache size 1769087. time 01:33
-    

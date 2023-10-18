@@ -566,7 +566,7 @@ class StateNode:
                         hero_name=combo[ind], is_ally=is_ally_next_turn, position=pos)
                 output_next_nodes_dict[str_pos_pick_choice].append(new_node)
                 node_expansion_count += 1
-        # logging.info(f"node expansion with size {node_expansion_count}")
+        logging.info(f"node expansion with size {node_expansion_count}")
 
         return output_next_nodes_dict, pick_choice_combo_dict
 
