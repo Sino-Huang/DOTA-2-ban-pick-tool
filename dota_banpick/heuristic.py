@@ -26,7 +26,8 @@ import numpy as np
 import itertools
 import pickle
 
-def calculate_heuristic(statenode:StateNode, versus_winrate_matrix, with_winrate_matrix,
+
+def calculate_heuristic(statenode:StateNode, counter_rate_matrix, with_winrate_matrix,
                         counter_weight=COUNTER_WEIGHT,
                         pos_1_counter_temperature=POS_1_COUNTER_TEMPERATURE,
                         pos_2_counter_temperature=POS_2_COUNTER_TEMPERATURE,
@@ -37,10 +38,23 @@ def calculate_heuristic(statenode:StateNode, versus_winrate_matrix, with_winrate
                         ):
     """it will return the advantage value for your team. 
     Your team's goal is to maximise it, while the opponent team's goal is to minimise it
+    versus_matrix should be counter rate matrix 
+    
+    Args:
+        statenode (StateNode): _description_
+        versus_matrix (_type_): counter rate matrix
+        with_winrate_matrix (_type_): _description_
+        counter_weight (_type_, optional): _description_. Defaults to COUNTER_WEIGHT.
+        pos_1_counter_temperature (_type_, optional): _description_. Defaults to POS_1_COUNTER_TEMPERATURE.
+        pos_2_counter_temperature (_type_, optional): _description_. Defaults to POS_2_COUNTER_TEMPERATURE.
+        pos_3_counter_temperature (_type_, optional): _description_. Defaults to POS_3_COUNTER_TEMPERATURE.
+        pos_4_counter_temperature (_type_, optional): _description_. Defaults to POS_4_COUNTER_TEMPERATURE.
+        pos_5_counter_temperature (_type_, optional): _description_. Defaults to POS_5_COUNTER_TEMPERATURE.
 
-    Return: 
-        numeric score
+    Returns:
+        float: numeric score
     """
+    
     counter_temperature_list = [pos_1_counter_temperature,
                                 pos_2_counter_temperature,
                                 pos_3_counter_temperature,
@@ -71,8 +85,9 @@ def calculate_heuristic(statenode:StateNode, versus_winrate_matrix, with_winrate
             local_versus_winrate_lst = []
             for oppo_pos_ind, oppo_hero in enumerate(opponent_hero_list):
                 if oppo_hero is not None:
-                    score = versus_winrate_matrix[ally_hero][oppo_hero]
+                    score = counter_rate_matrix[ally_hero][oppo_hero] * counter_weight 
                     score = score * counter_temperature_list[ally_pos_ind][oppo_pos_ind]
+                    score = score + 0.5 # 0.5 as base
                     local_versus_winrate_lst.append(score)
             if len(local_versus_winrate_lst) > 0:
                 local_vs_winrate = np.mean(local_versus_winrate_lst)
@@ -83,7 +98,7 @@ def calculate_heuristic(statenode:StateNode, versus_winrate_matrix, with_winrate
         global_vs_winrate = np.mean(global_versus_winrate_lst)
     else:
         global_vs_winrate = 0.0
-    global_vs_winrate = global_vs_winrate * counter_weight # apply counter weight
+    global_vs_winrate = global_vs_winrate  # apply counter weight
     
     # for with
     global_with_winrate_lst = []
@@ -99,6 +114,7 @@ def calculate_heuristic(statenode:StateNode, versus_winrate_matrix, with_winrate
         global_with_winrate = 0.0
         
     heuristic = np.mean([global_vs_winrate, global_with_winrate])
+    
     return heuristic
 
 def compute_bad_picks_for_each_pos(statenode:StateNode, versus_counter_matrix,

@@ -12,8 +12,12 @@ and is released under The MIT License. Please see the LICENSE
 file that should have been included as part of this project.
 '''
 
+COUNTER_WEIGHT = 1.2 # increase if we want to focus more on countering the opponents rather than hero combo
+                     # try 0.1 interval 
+
 NODE_EXPANSION_LIMIT = 9999
-DEPTH_LIMIT = 999
+DEPTH_LIMIT = 1
+SUGGESTION_NUM = 4 
 
 FIRST_ROUND_PICK_CHOICE = [ # need to be in ascending order
     [4, 5],
@@ -21,7 +25,6 @@ FIRST_ROUND_PICK_CHOICE = [ # need to be in ascending order
     [3, 5]
 ]
 DEFAULT_COUNTER_TEMPERATURE = 0.8
-COUNTER_WEIGHT = 1.0 # increase if we want to focus more on countering the opponents rather than hero combo
 POS_1_COUNTER_TEMPERATURE = [1.1,
                              DEFAULT_COUNTER_TEMPERATURE,
                              1.2,
