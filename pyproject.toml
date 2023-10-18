@@ -22,4 +22,4 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-exclude = ["config", "outputs", "multirun", "logs"] 
+exclude = ["config", "outputs", "multirun", "logs", "frontend", "Value_resources"] 
