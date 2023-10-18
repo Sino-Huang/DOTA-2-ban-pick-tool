@@ -160,3 +160,9 @@ cython_debug/
 #.idea/
 
 *cache_dict.pkl
+
+# macOS
+*.DS_Store
+
+# scraped static resources
+Valve_resources/hero_wide_icons/*.png
