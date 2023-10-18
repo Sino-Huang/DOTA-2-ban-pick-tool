@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 *cache_dict.pkl
+data/hero_wide_icons/
 
 # macOS
 *.DS_Store
