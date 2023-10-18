@@ -77,28 +77,32 @@ def calculate_heuristic(statenode:StateNode, counter_rate_matrix, with_winrate_m
         statenode.opponent_pos_5_hero,
     ]
     
+    
+    opponent_hero_list_filtered = [x for x in opponent_hero_list if x is not None]
 
     # for versus 
-    global_versus_winrate_lst = []
-    for ally_pos_ind, ally_hero in enumerate(ally_hero_list):
-        if ally_hero is not None:
-            local_versus_winrate_lst = []
-            for oppo_pos_ind, oppo_hero in enumerate(opponent_hero_list):
-                if oppo_hero is not None:
-                    score = counter_rate_matrix[ally_hero][oppo_hero] * counter_weight 
-                    score = score * counter_temperature_list[ally_pos_ind][oppo_pos_ind]
-                    score = score + 0.5 # 0.5 as base
-                    local_versus_winrate_lst.append(score)
-            if len(local_versus_winrate_lst) > 0:
-                local_vs_winrate = np.mean(local_versus_winrate_lst)
-            else:
-                local_vs_winrate = 0.0
-            global_versus_winrate_lst.append(local_vs_winrate)
-    if len(global_versus_winrate_lst) > 0:
-        global_vs_winrate = np.mean(global_versus_winrate_lst)
+    if len(opponent_hero_list_filtered) == 0:
+        global_vs_winrate = 0.5
     else:
-        global_vs_winrate = 0.0
-    global_vs_winrate = global_vs_winrate  # apply counter weight
+        global_versus_winrate_lst = []
+        for ally_pos_ind, ally_hero in enumerate(ally_hero_list):
+            if ally_hero is not None:
+                local_versus_winrate_lst = []
+                for oppo_pos_ind, oppo_hero in enumerate(opponent_hero_list):
+                    if oppo_hero is not None:
+                        score = counter_rate_matrix[ally_hero][oppo_hero] * counter_weight 
+                        score = score * counter_temperature_list[ally_pos_ind][oppo_pos_ind]
+                        score = score + 0.5 # 0.5 as base
+                        local_versus_winrate_lst.append(score)
+                if len(local_versus_winrate_lst) > 0:
+                    local_vs_winrate = np.mean(local_versus_winrate_lst)
+                else:
+                    local_vs_winrate = 0.5
+                global_versus_winrate_lst.append(local_vs_winrate)
+        if len(global_versus_winrate_lst) > 0:
+            global_vs_winrate = np.mean(global_versus_winrate_lst)
+        else:
+            global_vs_winrate = 0.5
     
     # for with
     global_with_winrate_lst = []
@@ -111,7 +115,7 @@ def calculate_heuristic(statenode:StateNode, counter_rate_matrix, with_winrate_m
     if len(global_with_winrate_lst) > 0:
         global_with_winrate = np.mean(global_with_winrate_lst)
     else:
-        global_with_winrate = 0.0
+        global_with_winrate = 0.5
         
     heuristic = np.mean([global_vs_winrate, global_with_winrate])
     
@@ -157,10 +161,7 @@ def compute_bad_picks_for_each_pos(statenode:StateNode, versus_counter_matrix,
         hero_counterrate_tuple_list = [] # [(hero, local_vs_winrate)]
         for hero in pos_hero_pool:
             # cal versus winrate 
-            local_vs_counterrate_lst = []
-            for oppo_hero in opponent_hero_list:
-                local_vs_counterrate_lst.append(versus_counter_matrix[hero][oppo_hero])
-            
+            local_vs_counterrate_lst = [versus_counter_matrix[hero][oppo_hero] for oppo_hero in opponent_hero_list]
             local_vs_counterrate = np.mean(local_vs_counterrate_lst)
             hero_counterrate_tuple_list.append((hero, local_vs_counterrate))
         # once we get hero_winrate_tuple_list, we sort it and get display_num of it

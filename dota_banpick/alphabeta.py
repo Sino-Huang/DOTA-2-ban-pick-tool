@@ -22,39 +22,96 @@ from pickaction import StateNode
 from heuristic import calculate_heuristic
 from tqdm.auto import tqdm
 from multiprocessing import Manager, Pool
-from tqdm.contrib.concurrent import process_map
+from tqdm.contrib.concurrent import process_map, thread_map
 from multiprocessing import Pool, Process, Manager, Lock
+import threading
+import queue
+from multiprocessing.pool import ThreadPool
+
 
 # this file implements the alpha beta pruning method
 
 # need a function to detect whether need to run alpha beta
 
+# global variable
+record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
 
-class BetaCutOffException(Exception):
+versus_winrate_matrix_fp = os.path.join(
+    record_folder, "versus_winrate_matrix.pkl")
+with_winrate_matrix_fp = os.path.join(
+    record_folder, "with_winrate_matrix.pkl")
+counter_rate_matrix_fp = os.path.join(
+    record_folder, "counter_rate_matrix.pkl")
+
+with open(versus_winrate_matrix_fp, 'rb') as f:
+    versus_winrate_matrix = pickle.load(f)
+
+with open(with_winrate_matrix_fp, 'rb') as f:
+    with_winrate_matrix = pickle.load(f)
+
+with open(counter_rate_matrix_fp, 'rb') as f:
+    counter_rate_matrix = pickle.load(f)
+
+
+class ABCutOffException(Exception):
     pass
 
 
-def support_map_func(args):
-    # ! need manager
-    next_node, local_node_ind, depth, alpha, beta, cache_dict, suggested_hero_list, next_node_values_list, pick_choice_combo_dict, str_pick_choice = args
+def support_thread_map_func_minimize(args):
+
+    next_node, depth, alpha, beta_queue, depth_limit, cache_dict, next_node_values_list, break_flag_list = args
+    beta = beta_queue.get()
     next_node_value, _ = alphabeta(
-        next_node, depth + 1, alpha, beta, False, cache_dict)
+        next_node, depth + 1, alpha, beta, True, depth_limit, cache_dict)
     next_node_values_list.append(next_node_value)
-    suggested_hero_list.append((pick_choice_combo_dict[str_pick_choice][local_node_ind], next_node_value))
-    
+
+    if next_node_value < alpha:
+        beta_queue.put(beta)  # inform main thread
+        break_flag_list.append(1)
+        raise ABCutOffException
+    beta = min(beta, next_node_value)
+    beta_queue.put(beta)
+
+
+def support_thread_map_func_maximize(args):
+    next_node, local_node_ind, depth, alpha_queue, beta, depth_limit, cache_dict, suggested_hero_list, next_node_values_list, pick_choice_combo_dict, str_pick_choice, break_flag_list = args
+    alpha = alpha_queue.get()
+    next_node_value, _ = alphabeta(
+        next_node, depth + 1, alpha, beta, False, depth_limit, cache_dict)
+    next_node_values_list.append(next_node_value)
+    suggested_hero_list.append(
+        (pick_choice_combo_dict[str_pick_choice][local_node_ind], next_node_value))
+
     if next_node_value > beta:
-        raise BetaCutOffException
+        alpha_queue.put(alpha)  # inform main thread
+        break_flag_list.append(1)
+        raise ABCutOffException
+    alpha = max(alpha, next_node_value)
+    alpha_queue.put(alpha)
 
 
-def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, cache_dict):
-    global versus_winrate_matrix
-    global with_winrate_matrix
-    global counter_rate_matrix
+def support_process_map_func(args):
+    # ! need manager
+    next_node, local_node_ind, depth, alpha_m, beta, depth_limit, cache_dict, suggested_hero_list, next_node_values_list, pick_choice_combo_dict, str_pick_choice, break_flag_list = args
+    next_node_value, _ = alphabeta(
+        next_node, depth + 1, alpha_m.value, beta, False, depth_limit, cache_dict)
+    next_node_values_list.append(next_node_value)
+    suggested_hero_list.append(
+        (pick_choice_combo_dict[str_pick_choice][local_node_ind], next_node_value))
+
+    if next_node_value > beta:
+        break_flag_list.append(1)
+        raise ABCutOffException
+
+    alpha_m.value = max(alpha_m.value, next_node_value)
+
+
+def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_limit, cache_dict):
 
     if str(node) in cache_dict:
         return cache_dict[str(node)]
 
-    if depth > DEPTH_LIMIT or node.is_terminated():
+    if depth > depth_limit or node.is_terminated():
         value = calculate_heuristic(
             node, counter_rate_matrix, with_winrate_matrix)
         cache_dict[str(node)] = (value, None)
@@ -83,31 +140,66 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, cache_d
                 local_manager = Manager()
                 suggested_hero_list = local_manager.list()
                 next_node_values_list = local_manager.list()
-                mapargs = [(next_node, local_node_ind, depth, alpha, beta, cache_dict,
+                break_flag_list = local_manager.list()
+                alpha_m = local_manager.Value('d', alpha)
+                mapargs = [(next_node, local_node_ind, depth, alpha_m, beta, depth_limit, cache_dict,
                             suggested_hero_list, next_node_values_list,
-                            pick_choice_combo_dict, str_pick_choice) for local_node_ind, next_node in enumerate(next_node_lst)]
-                # process_map(support_map_func, mapargs,
-                #             max_workers=10, chunksize=100)
-                
-                with Pool(10) as pool:
-                    try:
-                        pool.map(support_map_func, mapargs, chunksize=100)
-                    except BetaCutOffException:
-                        pool.terminate()
-                    pool.join()
-                
+                            pick_choice_combo_dict, str_pick_choice, break_flag_list) for local_node_ind, next_node in enumerate(next_node_lst)]
+
+                try:
+                    process_map(support_process_map_func, mapargs,
+                                max_workers=8, chunksize=int(len(mapargs) / 8), leave=False)
+                except ABCutOffException:
+                    pass
+
                 max_next_node_value = max(next_node_values_list)
                 value = max(value, max_next_node_value)
 
                 suggested_hero_list = list(suggested_hero_list)
-                
-                # beta pruning inside map 
-                alpha = max(alpha, value)
+                alpha = alpha_m.value
+                # beta pruning inside map
+                # alpha update inside map
+                if len(break_flag_list) > 0:
+                    break_flag = True
 
             else:
+                
+                # # ----- thread pool version -----
+                # # threading map for depth > 0
+                # suggested_hero_list = list()
+                # next_node_values_list = list()
+                # break_flag_list = list()
+                # alpha_queue = queue.Queue()
+                # alpha_queue.put(alpha)
+
+                # mapargs = [(next_node, local_node_ind, depth, alpha_queue, beta, depth_limit, cache_dict,
+                #             suggested_hero_list, next_node_values_list,
+                #             pick_choice_combo_dict, str_pick_choice, break_flag_list) for local_node_ind, next_node in enumerate(next_node_lst)]
+                # with ThreadPool(2) as pool:
+                #     try:
+                #         pool.map(support_thread_map_func_maximize, mapargs,
+                #                  chunksize=int(len(mapargs) / 2))
+                #     except ABCutOffException:
+                #         pass
+
+                # max_next_node_value = max(next_node_values_list)
+                # value = max(value, max_next_node_value)
+
+                # suggested_hero_list = suggested_hero_list
+                # alpha = alpha_queue.get(timeout=5)
+
+                # # beta pruning inside map
+                # # alpha update inside map
+                # if len(break_flag_list) > 0:
+                #     break_flag = True
+                # # --------------------------
+                
+
+                # ------ vanilla loop version -----
+
                 for local_node_ind, next_node in enumerate(next_node_lst):
                     next_node_value, _ = alphabeta(
-                        next_node, depth + 1, alpha, beta, False, cache_dict)
+                        next_node, depth + 1, alpha, beta, False, depth_limit, cache_dict)
                     value = max(value, next_node_value)
                     suggested_hero_list_ele = (
                         pick_choice_combo_dict[str_pick_choice][local_node_ind], next_node_value)
@@ -116,6 +208,7 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, cache_d
                         break_flag = True
                         break
                     alpha = max(alpha, value)
+                # ----------------------------
 
             # sort suggested_hero_list
             suggested_hero_list = sorted(
@@ -133,16 +226,52 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, cache_d
         value = 9999
         break_flag = False
         for str_pick_choice, next_node_lst in output_next_nodes_dict.items():
+
+            # ------- vanilla loop version -----
+                
             for next_node in next_node_lst:
                 next_node_value, _ = alphabeta(
-                    next_node, depth + 1, alpha, beta, True, cache_dict)
+                    next_node, depth + 1, alpha, beta, True, depth_limit, cache_dict)
                 value = min(value, next_node_value)
                 if value < alpha:
                     break_flag = True
                     break
                 beta = min(beta, value)
+            # ------- ---------- -----
+
+            # # --------- thread pool version -------
+            # next_node_values_list = list()
+            # break_flag_list = list()
+            # beta_queue = queue.Queue()
+            # beta_queue.put(beta)
+
+            # mapargs = [(next_node, depth, alpha, beta_queue, depth_limit, cache_dict,
+            #             next_node_values_list,
+            #             break_flag_list) for next_node in next_node_lst]
+
+            # with ThreadPool(2) as pool:
+            #     try:
+            #         pool.map(support_thread_map_func_minimize, mapargs,
+            #                  chunksize=int(len(mapargs) / 2))
+            #     except ABCutOffException:
+            #         pass
+
+            # min_next_node_value = min(next_node_values_list)
+            # value = min(value, min_next_node_value)
+
+            # beta = beta_queue.get(timeout=5)
+
+            # # beta pruning inside map
+            # # alpha update inside map
+            # if len(break_flag_list) > 0:
+            #     break_flag = True
+            # # -----------------------
+            
+
             if break_flag:
                 break
+            
+
         return value, None
 
 
@@ -183,6 +312,7 @@ if __name__ == "__main__":
 
     manager = Manager()
     alpha_beta_cache_dict = manager.dict()
+    depth_limit = 2
     # round 5
     # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
     #     .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)\
@@ -193,16 +323,16 @@ if __name__ == "__main__":
     start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
         .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)
     value, suggested_hero_pick_dict = alphabeta(
-        start_node, 0, -999, 999, True, alpha_beta_cache_dict)
+        start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict)
     # save cache
     print("Save dict ing...")
-    with open(os.path.join(record_folder, f"depth_limit_{DEPTH_LIMIT}_alpha_beta_cache_dict.pkl"), 'wb') as f:
+    with open(os.path.join(record_folder, f"depth_limit_{depth_limit}_alpha_beta_cache_dict.pkl"), 'wb') as f:
         pickle.dump(dict(alpha_beta_cache_dict), f)
     print("Second time with cache")
     print(f"A Cache size {len(alpha_beta_cache_dict)}")
 
     value, suggested_hero_pick_dict = alphabeta(
-        start_node, 0, -999, 999, True, alpha_beta_cache_dict)
+        start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict)
 
     # Eval records
     # DEPTH_LIMIT = 1 Round 3 Time: 04:35
@@ -211,3 +341,6 @@ if __name__ == "__main__":
     # DEPTH_LIMIT = 1 Round 3 With Heuristic Cache and Alphabeta pruning Cache but using multiprocessing.Pool Time: 02:42 So Dont use it
 
     # DEPTH_LIMIT = 1 Round 3 With Heuristic Cache and Alphabeta pruning Cache with Full Depth save Time: 00:00
+    # A Cache size 1068238 with local sort. time 01:18
+    # without local sort A Cache size 1769087. time 01:33
+    

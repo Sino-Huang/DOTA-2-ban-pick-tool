@@ -24,6 +24,8 @@ FIRST_ROUND_PICK_CHOICE = [ # need to be in ascending order
     [3, 4],
     [3, 5]
 ]
+PRUNE_WORST_HERO_NUM = 5
+
 DEFAULT_COUNTER_TEMPERATURE = 0.8
 POS_1_COUNTER_TEMPERATURE = [1.1,
                              DEFAULT_COUNTER_TEMPERATURE,
