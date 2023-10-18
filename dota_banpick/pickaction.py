@@ -457,11 +457,17 @@ class StateNode:
 
         # normal case
         if next_round in [1, 2]:
+            if pick_same_hero_sit_flag:
+                temp_l = []
+                for pc in first_round_pick_choice:
+                    if fix_hero_pos in pc:
+                        temp_l.append(pc)
+                if len(temp_l) == 0:
+                    temp_l.append([fix_hero_pos, 5]) # in case it is not normal pos pick
+                first_round_pick_choice = temp_l
+            
             # you can only pick under restriction
             for pick_choice in first_round_pick_choice:
-                if pick_same_hero_sit_flag:
-                    if fix_hero_pos not in pick_choice:  # skip choice where we do not have fix hero pos
-                        continue
                 pc_sorted = pick_choice # ! assume sort arry for first round
                 if pick_same_hero_sit_flag:
                     fix_hero_pos_local_ind = pc_sorted.index(fix_hero_pos)
@@ -486,14 +492,19 @@ class StateNode:
             for ind in range(len(hero_list)):
                 if hero_list[ind] is None:
                     available_pos_lst.append(ind + 1)
-
+            if pick_same_hero_sit_flag:
+                available_pos_lst.append(fix_hero_pos)
             available_pos_lst = sorted(available_pos_lst)
             round_pick_choice = list(
                 itertools.combinations(available_pos_lst, 2))
+            if pick_same_hero_sit_flag:
+                temp_l = []
+                for pc in round_pick_choice:
+                    if fix_hero_pos in pc:
+                        temp_l.append(pc)
+                round_pick_choice = temp_l
+                
             for pick_choice in round_pick_choice:
-                if pick_same_hero_sit_flag:
-                    if fix_hero_pos not in pick_choice:  # skip choice where we do not have fix hero pos
-                        continue
                 pc_sorted = pick_choice # ! assume already done after itertools.combination
                 if pick_same_hero_sit_flag:
                     fix_hero_pos_local_ind = pc_sorted.index(fix_hero_pos)
@@ -508,9 +519,21 @@ class StateNode:
                         hero_pool_a = [fix_hero]
                     else:
                         hero_pool_b = [fix_hero]
-
-                hero_pick_combo_list = [
-                    (a, b) for a in hero_pool_a for b in hero_pool_b if a != b]
+                hero_pick_combo_list = [] 
+                # ! combo list too big, prune it based on with rate matrix
+                for a in hero_pool_a:
+                    least_combo_heros = []
+                    for tempi, w_hero in enumerate(reversed(with_winrate_matrix[a].keys())):
+                            if tempi >= PRUNE_WORST_HERO_NUM:
+                                break
+                            least_combo_heros.append(w_hero)
+                    for b in hero_pool_b:
+                        if a == b:
+                            continue
+                        if b in least_combo_heros:
+                            continue
+                        hero_pick_combo_list.append((a,b))
+                        
                 pick_choice_combo_dict[str(pc_sorted)] = hero_pick_combo_list
 
         else:  # meaning is [5,6]
@@ -537,21 +560,21 @@ class StateNode:
         output_next_nodes_dict = dict()
         node_expansion_count = 0
         for str_pos_pick_choice, combo_list in pick_choice_combo_dict.items():
-            # ! --sort the pick_choice_combo_dict may help pruning ---
-            def measure_counter(combo):
-                if len(paired_hero_list) > 0:
-                    # random measure 
-                    t_ind_hero = random.randint(0,1)
-                    t_ind_pair = random.randint(0,len(paired_hero_list)-1)
-                    return counter_rate_matrix[combo[t_ind_hero]][paired_hero_list[t_ind_pair]]
-                elif len(combo) == 2:
-                    return with_winrate_matrix[combo[0]][combo[1]]
-                else:
-                    return 0.0
-            if len(combo_list[0]) == 2:
-                combo_list = sorted(combo_list, key=measure_counter, reverse=True)
-                pick_choice_combo_dict[str_pos_pick_choice] = combo_list # store back
-            # ! -----------------------------------------------------
+            # # ! --sort the pick_choice_combo_dict may/not help pruning, but trade off between pruning out and sorting ---
+            # def measure_counter(combo):
+            #     if len(paired_hero_list) > 0:
+            #         # random measure 
+            #         t_ind_hero = random.randint(0,1)
+            #         t_ind_pair = random.randint(0,len(paired_hero_list)-1)
+            #         return counter_rate_matrix[combo[t_ind_hero]][paired_hero_list[t_ind_pair]]
+            #     elif len(combo) == 2:
+            #         return with_winrate_matrix[combo[0]][combo[1]]
+            #     else:
+            #         return 0.0
+            # if len(combo_list[0]) == 2:
+            #     combo_list = sorted(combo_list, key=measure_counter, reverse=True)
+            #     pick_choice_combo_dict[str_pos_pick_choice] = combo_list # store back
+            # # ! -----------------------------------------------------
             
             output_next_nodes_dict[str_pos_pick_choice] = []
             pos_pick_choice = eval(str_pos_pick_choice)  # type: tuple
