@@ -2,6 +2,11 @@
 > [!WARNING]
 > App not setup: This app is still in development mode 
 
+## Quickstart
+1. you shall have a python environment 
+2. to install the app, run `pip install "git@github.com:Sino-Huang/DOTA-2-ban-pick-tool.git@main"`
+3. after install the python package, simply run `dota-banpick` to start the app!
+
 ## Purpose 
 - User friendly and newbee friendly DOTA 2 ban pick tool. 
 - Help you and your friends to drafting 
@@ -37,12 +42,31 @@
 
 ## UI
 - similar to https://www.opendota.com/combos but also add ban button as well as the position flag
+- so far, we have created a streamlit version.
+- In the future, we will create a more interactive UI
 
 ## Deployment 
-- Flask web app will be deployed. 
+- So far, this app can only be deployed localy using Streamlit framework
+- In the future, we will reconstruct the app using Django and deploy it online, please wait for us ~ 💖
 
 ## Structure 
-- Web scraping 
+```
+.
+├── 1_🎃_Homepage.py
+├── alphabeta.py
+├── config.py
+├── data
+│   ├── hero_wide_icons
+│   └── records
+├── heuristic.py
+├── __init__.py
+├── pages
+│   ├── 2_🐻_Heroes.py
+│   ├── 3_🌊_Edit_Hero_Pool.py
+│   └── 4_🤕_BanPick.py
+├── pickaction.py
+└── utils.py
+```
 
 ## Promise
 - The banpick app will be updated to suit new patches as long as the authors still play DOTA 2 
