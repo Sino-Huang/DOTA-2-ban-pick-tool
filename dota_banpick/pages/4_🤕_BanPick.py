@@ -189,9 +189,11 @@ if ac_but:
 
 
         st.write("Not Good")
-        for k in bad_hero_eles:
-            st.write(f"Pos {k}")
-            st.write(bad_hero_eles[k])
+        cols = st.columns(len(bad_hero_eles))
+        for i, k in enumerate(bad_hero_eles):
+            with cols[i]:
+                st.write(f"Pos {k}")
+                st.write(bad_hero_eles[k])
 
 for t in ["Strength", "Agility", "Intelligence", "Universal"]:
     with st.container():
