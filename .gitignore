@@ -160,8 +160,9 @@ cython_debug/
 #.idea/
 
 # *cache_dict.pkl
-data/hero_wide_icons/
-data/notebook/<profile-folder>
+data/
+frontend/
+Valve_resources/
 
 # macOS
 *.DS_Store
