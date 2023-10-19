@@ -116,8 +116,12 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
             value, suggested_hero_pick_dict = cache_dict[str(node)]
             for str_pick_choice in suggested_hero_pick_dict:
                 suggested_hero_list = suggested_hero_pick_dict[str_pick_choice]
+                updated_suggested_hero_list = []
                 for s_h_l_ind in range(len(suggested_hero_list)):
                     hero_combo, val = suggested_hero_list[s_h_l_ind]
+                    h1, h2 = hero_combo
+                    if h1 in node.ban_lst or h2 in node.ban_lst:
+                        continue
                     countered_most_hero_list = set()
                     for ban_hero in node.ban_lst:
                         # get counter most top PRUNE_WORST_HERO_NUM
@@ -129,12 +133,13 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                     for hero in hero_combo:
                         if hero in countered_most_hero_list:
                             val += 0.03
-
-                    suggested_hero_list[s_h_l_ind] = [hero_combo, val]
+                    
+                        
+                    updated_suggested_hero_list.append([hero_combo, val])
                 # sort it again
-                suggested_hero_list = sorted(
-                    suggested_hero_list, key=lambda x: x[1], reverse=True)
-                suggested_hero_pick_dict[str_pick_choice] = suggested_hero_list
+                updated_suggested_hero_list = sorted(
+                    updated_suggested_hero_list, key=lambda x: x[1], reverse=True)
+                suggested_hero_pick_dict[str_pick_choice] = updated_suggested_hero_list
             return value, suggested_hero_pick_dict
             # ! -----------------------
         else:

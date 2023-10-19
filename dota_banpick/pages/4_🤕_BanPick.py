@@ -123,10 +123,10 @@ def inp_on_change(bpinput_key, name):
         if len(input_val) == 2 and p_type == "a":
             pos_v = int(input_val[1])
             st.session_state.banpicknode.add_hero(name, True, pos_v)
-        elif p_type == "o" or "e":
+        elif len(input_val) == 2 and (p_type == "o" or p_type == "e"):
             pos_v = int(input_val[1])
             st.session_state.banpicknode.add_hero(name, False, pos_v)
-        elif en(input_val) == 2 and p_type == "b" or "q":
+        elif p_type == "b" or p_type == "q":
             st.session_state.banpicknode.ban_hero(name)
 
 cache_dict = load_cached_name_hero_pool_dict()
@@ -150,6 +150,9 @@ if reset_but:
 ac_but = st.button("Ask For Suggestions")
 # display 
 st.write(st.session_state.banpicknode)
+st.write("Banned")
+st.write(st.session_state.banpicknode.ban_lst)
+
 if ac_but:
     oppo_hero_list = [
         st.session_state.banpicknode.opponent_pos_1_hero,
@@ -164,9 +167,11 @@ if ac_but:
         _, suggested_hero_pick_dict = alphabeta(
         st.session_state.banpicknode, 0, -999, 999, True, 1, init_warmup_cache_dict())
         st.write("Suggest")
-        for k in suggested_hero_pick_dict:
-            st.write(f"\t pos combo {k}:")
-            st.write(f"\t\t {[x[0] for x in suggested_hero_pick_dict[k]][:4]}")
+        cols = st.columns(len(suggested_hero_pick_dict))
+        for i, k in enumerate(suggested_hero_pick_dict):
+            with cols[i]:
+                st.write(f"Pos {k}")
+                st.write([str(x[0]) for x in suggested_hero_pick_dict[k]][:4])
             
 
             
@@ -176,14 +181,17 @@ if ac_but:
         bad_hero_eles = compute_bad_picks_for_each_pos(st.session_state.banpicknode)
         
         st.write("Suggest")
-        for k in suggested_hero_pick_dict:
-            st.write(f"\t pos combo {k}")
-            st.write(f"\t\t {[x[0] for x in suggested_hero_pick_dict[k]][:4]}")
+        cols = st.columns(len(suggested_hero_pick_dict))
+        for i, k in enumerate(suggested_hero_pick_dict):
+            with cols[i]:
+                st.write(f"Pos {k}")
+                st.write([str(x[0]) for x in suggested_hero_pick_dict[k]][:4])
+
 
         st.write("Not Good")
         for k in bad_hero_eles:
-            st.write(f"\t pos {k}:")
-            st.write(f"\t\t {bad_hero_eles[k]}")
+            st.write(f"Pos {k}")
+            st.write(bad_hero_eles[k])
 
 for t in ["Strength", "Agility", "Intelligence", "Universal"]:
     with st.container():
