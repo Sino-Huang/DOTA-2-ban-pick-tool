@@ -161,6 +161,7 @@ class StateNode:
             # check if current pick
             ban_hero_index = hero_list.index(ban_hero_name)
             ban_hero_pick_round = hero_pick_round_list[ban_hero_index]
+            hero_pick_round_list.pop(ban_hero_index)
             if ban_hero_pick_round != self.cur_round:
                 logging.warning(
                     "You cannot ban an hero that is already picked")
@@ -171,19 +172,29 @@ class StateNode:
                 if ban_hero_index == 0:
                     self.ally_pos_1_hero = None
                     self.ally_pos_1_pick_round = 0
+                    if self.cur_round not in hero_pick_round_list:
+                        self.cur_round -=1
 
                 elif ban_hero_index == 1:
                     self.ally_pos_2_hero = None
                     self.ally_pos_2_pick_round = 0
+                    if self.cur_round not in hero_pick_round_list:
+                        self.cur_round -=1
                 elif ban_hero_index == 2:
                     self.ally_pos_3_hero = None
                     self.ally_pos_3_pick_round = 0
+                    if self.cur_round not in hero_pick_round_list:
+                        self.cur_round -=1
                 elif ban_hero_index == 3:
                     self.ally_pos_4_hero = None
                     self.ally_pos_4_pick_round = 0
+                    if self.cur_round not in hero_pick_round_list:
+                        self.cur_round -=1
                 elif ban_hero_index == 4:
                     self.ally_pos_5_hero = None
                     self.ally_pos_5_pick_round = 0
+                    if self.cur_round not in hero_pick_round_list:
+                        self.cur_round -=1
                 if self.cur_round == 5:  # ! for round 5, if pick same hero, we can treat it like we just finish round 4
                     self.cur_round = 4
                 return self
