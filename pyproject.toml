@@ -20,8 +20,12 @@ dependencies = [
 dev = [
     "pytest"
 ]
+[tool.setuptools]
+include-package-data = true
 
 [tool.setuptools.packages.find]
+where = ['data'] # tell the package data location
+
 exclude = ["config", "outputs", "multirun", "logs", "frontend", "Value_resources"] 
 
 [project.scripts]
