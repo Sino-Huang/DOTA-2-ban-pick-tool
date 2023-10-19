@@ -27,6 +27,17 @@ import itertools
 import pickle
 
 
+# global variable
+record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
+
+
+counter_rate_matrix_fp = os.path.join(
+    record_folder, "counter_rate_matrix.pkl")
+
+with open(counter_rate_matrix_fp, 'rb') as f:
+    versus_counter_matrix = pickle.load(f)
+    
+    
 def calculate_heuristic(statenode:StateNode, counter_rate_matrix, with_winrate_matrix,
                         counter_weight=COUNTER_WEIGHT,
                         pos_1_counter_temperature=POS_1_COUNTER_TEMPERATURE,
@@ -121,7 +132,7 @@ def calculate_heuristic(statenode:StateNode, counter_rate_matrix, with_winrate_m
     
     return heuristic
 
-def compute_bad_picks_for_each_pos(statenode:StateNode, versus_counter_matrix,
+def compute_bad_picks_for_each_pos(statenode:StateNode,
                                    display_num=4,
                                    ):
     # output structure : {pos: [bad_hero_ele,]}

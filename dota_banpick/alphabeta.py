@@ -381,7 +381,7 @@ if __name__ == "__main__":
     # print("without cache dict")
     start_time = time.time()
     value, suggested_hero_pick_dict = alphabeta(
-        start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict)
+        start_node, 0, -999, 999, True, depth_limit, None)
     
     print(suggested_hero_pick_dict)
     end_time = time.time()
