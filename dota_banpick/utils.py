@@ -34,7 +34,7 @@ def generate_warmup_cache(depth_limit = 2):
     logging.basicConfig(
         format='%(levelname)s:%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.WARNING)
 
-    record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
+    record_folder = os.path.join(os.path.dirname(__file__), "data/records")
     hero_pool_fps = glob(os.path.join(
         record_folder, "default_pos_*_hero_pool.txt"))
     hero_pool_fps = natsorted(hero_pool_fps)
@@ -51,7 +51,10 @@ def generate_warmup_cache(depth_limit = 2):
     manager = Manager()
     alpha_beta_cache_dict = manager.dict()
     value, suggested_hero_pick_dict = alphabeta(
-        start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict)
+        start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict, True)
+    
+    # shrink it 
+    alpha_beta_cache_dict = shrink_warmup_cache(alpha_beta_cache_dict)
     # save cache
     print("Save dict ing...")
     with open(os.path.join(record_folder, f"depth_limit_{depth_limit}_warmup_cache_dict.pkl"), 'wb') as f:
@@ -60,7 +63,7 @@ def generate_warmup_cache(depth_limit = 2):
     print(f"A Cache size {len(alpha_beta_cache_dict)}")
     start_time = time.time()
     value, suggested_hero_pick_dict = alphabeta(
-        start_node, 0, -999, 999, True, depth_limit,alpha_beta_cache_dict)
+        start_node, 0, -999, 999, True, depth_limit,alpha_beta_cache_dict, True)
     
     end_time = time.time()
     elapsed_time = end_time - start_time # in second
@@ -73,7 +76,7 @@ def pre_sort_counter_rate_matrix():
     """
     logging.basicConfig(
         format='%(levelname)s:%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.WARNING)
-    record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
+    record_folder = os.path.join(os.path.dirname(__file__), "data/records")
 
 
     versus_winrate_matrix_fp = os.path.join(
@@ -132,9 +135,16 @@ def pre_sort_counter_rate_matrix():
     with open(versus_winrate_matrix_fp, 'wb') as f:
         pickle.dump(sorted_versus_rate_matrix, f)
 
+
+def shrink_warmup_cache(cache_dict):
+    new_dict= dict()
+    for k, v in cache_dict.items():
+        if "Current Round: 0" in k or "Current Round: 1" in k:
+            new_dict[k] = v
+            
+            
+    return new_dict
+
 if __name__ == "__main__":
-    # debug
     generate_warmup_cache(1)
-    generate_warmup_cache(2)
-    
     

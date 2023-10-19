@@ -159,8 +159,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-*cache_dict.pkl
+# *cache_dict.pkl
 data/hero_wide_icons/
+data/notebook/<profile-folder>
 
 # macOS
 *.DS_Store

@@ -28,7 +28,7 @@ import pickle
 
 
 # global variable
-record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
+record_folder = os.path.join(os.path.dirname(__file__), "data/records")
 
 
 counter_rate_matrix_fp = os.path.join(
@@ -186,7 +186,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         format='%(levelname)s:%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
 
-    record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
+    record_folder = os.path.join(os.path.dirname(__file__), "data/records")
     hero_pool_fps = glob(os.path.join(
         record_folder, "default_pos_*_hero_pool.txt"))
     hero_pool_fps = natsorted(hero_pool_fps)

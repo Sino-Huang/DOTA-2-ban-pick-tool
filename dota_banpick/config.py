@@ -17,7 +17,7 @@ COUNTER_WEIGHT = 1.2 # increase if we want to focus more on countering the oppon
 
 NODE_EXPANSION_LIMIT = 9999
 DEPTH_LIMIT = 1 # you cannot have it more than 2,, for real time speed up, set it to 1
-SUGGESTION_NUM = 20
+SUGGESTION_NUM = 200
 
 FIRST_ROUND_PICK_CHOICE = [ # need to be in ascending order
     [4, 5],

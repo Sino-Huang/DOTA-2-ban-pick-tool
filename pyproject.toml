@@ -13,7 +13,7 @@ readme = "readme.md"
 dependencies = [
     "requests","pandas","numpy", "undetected-chromedriver",
     "tqdm","ipywidgets", "hydra-core",
-    "jupyterlab","selenium","django", "natsort", "Pillow"
+    "jupyterlab","selenium","django", "natsort", "Pillow", "streamlit"
 ]
 
 [project.optional-dependencies]
@@ -23,3 +23,6 @@ dev = [
 
 [tool.setuptools.packages.find]
 exclude = ["config", "outputs", "multirun", "logs", "frontend", "Value_resources"] 
+
+[project.scripts]
+dota-banpick = "dota_banpick:main_cli"

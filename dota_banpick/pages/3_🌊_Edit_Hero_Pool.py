@@ -9,12 +9,12 @@ import pandas as pd
 import pickle 
 from PIL import Image
 
-record_folder = os.path.join(os.path.dirname(__file__), "../../data/records")
+record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
 
 
-record_folder = os.path.join(os.path.dirname(__file__), "../../data/records")
+record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
 hero_name_csv_fp = os.path.join(record_folder, "heronames.csv")
-image_folder = os.path.join(os.path.dirname(__file__), "../../data/hero_wide_icons")
+image_folder = os.path.join(os.path.dirname(__file__), "../data/hero_wide_icons")
 
 image_width = 11 
 
@@ -105,6 +105,9 @@ def player_basic_info_callback():
     st.session_state["target_pos"] = pos_ind
     st.session_state["ally_player_names"][pos_ind] = st.session_state.form_playername
     st.session_state['activate_hero_flag'] = True
+    st.session_state['activate_basic_info_flag'] = False
+
+    
 
     
 def complete_edit_callback():

@@ -12,17 +12,18 @@ from PIL import Image
 from dota_banpick.alphabeta import alphabeta
 from dota_banpick.heuristic import compute_bad_picks_for_each_pos
 from dota_banpick.pickaction import StateNode
+from dota_banpick.config import DEPTH_LIMIT
 import pandas as pd
 
-record_folder = os.path.join(os.path.dirname(__file__), "../../data/records")
+record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
 
 hero_name_csv_fp = os.path.join(record_folder, "heronames.csv")
-image_folder = os.path.join(os.path.dirname(__file__), "../../data/hero_wide_icons")
+image_folder = os.path.join(os.path.dirname(__file__), "../data/hero_wide_icons")
 
 image_width = 11 
 
 warmup_cache_dict_fp = os.path.join(
-        record_folder, "depth_limit_2_warmup_cache_dict.pkl")
+        record_folder, f"depth_limit_{DEPTH_LIMIT}_warmup_cache_dict.pkl")
 
 st.set_page_config(
     layout="wide"

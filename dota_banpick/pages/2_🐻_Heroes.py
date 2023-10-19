@@ -4,9 +4,9 @@ import os
 import pickle 
 from PIL import Image
 
-record_folder = os.path.join(os.path.dirname(__file__), "../../data/records")
+record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
 hero_name_csv_fp = os.path.join(record_folder, "heronames.csv")
-image_folder = os.path.join(os.path.dirname(__file__), "../../data/hero_wide_icons")
+image_folder = os.path.join(os.path.dirname(__file__), "../data/hero_wide_icons")
 
 image_width = 11 
 

@@ -8,12 +8,13 @@ from multiprocessing import Manager
 import copy
 import pandas as pd 
 import pickle 
+from dota_banpick.config import DEPTH_LIMIT
 
 
 
-record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
+record_folder = os.path.join(os.path.dirname(__file__), "data/records")
 warmup_cache_dict_fp = os.path.join(
-        record_folder, "depth_limit_2_warmup_cache_dict.pkl")
+        record_folder, f"depth_limit_{DEPTH_LIMIT}_warmup_cache_dict.pkl")
 st.set_page_config(
     page_title="DOTA 2 BP Tool",
     page_icon="✨"
