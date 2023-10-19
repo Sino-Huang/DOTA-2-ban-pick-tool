@@ -20,13 +20,13 @@ dependencies = [
 dev = [
     "pytest"
 ]
+
 [tool.setuptools]
 include-package-data = true
+packages = ["dota_banpick"]
+package-dir = {"dota_banpick" = "dota_banpick"}
+package-data = {"dota_banpick" = ["data/**/*"]} # data are in data folder and include all of them
 
-[tool.setuptools.packages.find]
-where = ['data'] # tell the package data location
-
-exclude = ["config", "outputs", "multirun", "logs", "frontend", "Value_resources"] 
 
 [project.scripts]
 dota-banpick = "dota_banpick:main_cli"
