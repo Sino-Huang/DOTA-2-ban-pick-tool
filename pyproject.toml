@@ -13,7 +13,7 @@ readme = "readme.md"
 dependencies = [
     "requests","pandas","numpy", "undetected-chromedriver",
     "tqdm","ipywidgets", "hydra-core",
-    "jupyterlab","selenium","django", "natsort", "Pillow", "streamlit"
+    "jupyterlab","selenium","django", "natsort", "Pillow", "streamlit", "watchdog"
 ]
 
 [project.optional-dependencies]
