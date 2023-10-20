@@ -9,51 +9,11 @@ import pandas as pd
 import pickle 
 from PIL import Image
 
-record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
+from dota_banpick.st_cache import get_hero_csv_data, get_heros, get_image_data, load_cached_name_hero_pool_dict, load_default_hero_pools
 
 
-record_folder = os.path.join(os.path.dirname(__file__), "../data/records")
-hero_name_csv_fp = os.path.join(record_folder, "heronames.csv")
-image_folder = os.path.join(os.path.dirname(__file__), "../data/hero_wide_icons")
-
-image_width = 11 
-
-st.session_state.data_ready_count = 0
-if 'activate_hero_flag' not in st.session_state:
-    st.session_state['activate_hero_flag'] = False
-if 'activate_basic_info_flag' not in st.session_state:
-    st.session_state['activate_basic_info_flag'] = False
-    
-if "display_stats_flag" not in st.session_state:
-    st.session_state['display_stats_flag'] = False
 
 
-@st.cache_data
-def get_hero_csv_data(t_type):
-    df = pd.read_csv(hero_name_csv_fp, header=None)
-    df.columns = ["Name", "Image filename", "Type"]
-    allheroes = list(df['Name'].str.strip())
-    st.session_state['allheroes'] = allheroes
-    df = df[df['Type'].str.strip() == t_type]
-    return df
-
-@st.cache_data
-def get_heros():
-    df = pd.read_csv(hero_name_csv_fp, header=None)
-    df.columns = ["Name", "Image filename", "Type"]
-    allheroes = list(df['Name'].str.strip())
-    return allheroes
-    
-
-@st.cache_data
-def get_image_data(imgfilenames):
-    output_img_array = [] 
-    for imgfn in imgfilenames:
-        imgfp = os.path.join(image_folder, imgfn+".png")
-        img = Image.open(imgfp)
-        output_img_array.append(img)
-        
-    return output_img_array
 
 def row_display_component(component_arg_list, width):
     chunks_width = []
@@ -73,26 +33,6 @@ def show_item_component(img, name, toggle_val):
     with col2:
         st.toggle("activate", label_visibility="collapsed", value=toggle_val, key=f"toggle_{name}")
         
-
-@st.cache_data
-def load_default_hero_pools():
-    hero_pool_fps = glob(os.path.join(
-        record_folder, "default_pos_*_hero_pool.txt"))
-    hero_pool_fps = natsorted(hero_pool_fps)
-    default_hero_pools = []
-    for hp_fp in hero_pool_fps:
-        with open(hp_fp, 'r') as f:
-            hp_text = f.read()
-            default_hero_pools.append(eval(hp_text))
-    return default_hero_pools  # structure [[hero_name]]
-
-
-@st.cache_resource
-def load_cached_name_hero_pool_dict():
-    singleton_manager = Manager()
-    cache_dict = singleton_manager.dict()
-    return cache_dict
-
 
 def player_basic_info_callback():
     pos_ind = ['Pos 1 Carry',
@@ -171,123 +111,136 @@ def file_upload_onchange():
             st.session_state['display_stats_flag'] = True
             st.session_state.data_ready_count += 1
     
-st.set_page_config(
-    layout="wide"
-)
-
-st.markdown("""
-<style>
-.small-font {
-    font-size:11px !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# default
-
-if "opponent_hero_pools" not in st.session_state:
-    st.session_state["opponent_hero_pools"] = load_default_hero_pools()
-
-if "ally_player_names" not in st.session_state:
-    st.session_state["ally_player_names"] = ['Pos 1 Bot',
-                                             'Pos 2 Bot',
-                                             'Pos 3 Bot',
-                                             'Pos 4 Bot',
-                                             'Pos 5 Bot'
-                                             ]
 
 
-if "ally_hero_pools" not in st.session_state:
-    st.session_state["ally_hero_pools"] = load_default_hero_pools()
-    
-if 'allheroes' not in st.session_state:
-    st.session_state["allheroes"] = get_heros()
 
-st.markdown("""## Edit Hero Pools
+image_width = 11 
 
-- To run the BanPick tool, you are required to provide your hero pool and your position.""")
+if __name__ == "__main__":
+    st.set_page_config(
+        layout="wide"
+    )
+    st.session_state.data_ready_count = 0
+    if 'activate_hero_flag' not in st.session_state:
+        st.session_state['activate_hero_flag'] = False
+    if 'activate_basic_info_flag' not in st.session_state:
+        st.session_state['activate_basic_info_flag'] = False
+        
+    if "display_stats_flag" not in st.session_state:
+        st.session_state['display_stats_flag'] = False
 
-st.markdown(
-    """
-<style>
-button {
-    height: auto;
-    padding-top: 15px !important;
-    padding-bottom: 15px !important;
-}
-</style>
-""",
-    unsafe_allow_html=True,
-)
+    st.markdown("""
+    <style>
+    .small-font {
+        font-size:11px !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
+    # default
 
-col1, col2, col3= st.columns(3)
-with col1:
-    start_but = st.button("Edit Your Pool", on_click=input_user_info_callback)
-    download_button_placeholder = st.empty()
+    if "opponent_hero_pools" not in st.session_state:
+        st.session_state["opponent_hero_pools"] = load_default_hero_pools()
 
-with col2:
-    ca_but = st.button("Import From Cache", on_click=load_from_cache_callback)
-
-with col3:
-    # ! upload widget need to always display , also remember any button will refresh page when using if
-    # ! so far solution is use on_change
-    # after a button get clicked, the file will be run again
-    uploaded_file = st.file_uploader(
-        "Choose Hero Pools File", type=['json'], key=f"uploader_key", on_change=file_upload_onchange)
+    if "ally_player_names" not in st.session_state:
+        st.session_state["ally_player_names"] = ['Pos 1 Bot',
+                                                'Pos 2 Bot',
+                                                'Pos 3 Bot',
+                                                'Pos 4 Bot',
+                                                'Pos 5 Bot'
+                                                ]
 
 
-if st.session_state['activate_basic_info_flag']:
-    with st.form("player_basic_info"):
-        pos_rad = st.radio("Player Position (if you can play multi-pos, or you want to submit your friends' hero pool, re-edit in the next round)", [
-            'Pos 1 Carry',
-            'Pos 2 Mid',
-            'Pos 3 Offlane',
-            'Pos 4 Ganker',
-            'Pos 5 Support',
-        ], index=4, key="form_pos_rad")
+    if "ally_hero_pools" not in st.session_state:
+        st.session_state["ally_hero_pools"] = load_default_hero_pools()
+        
+    if 'allheroes' not in st.session_state:
+        st.session_state["allheroes"] = get_heros()
+    st.markdown("""## Edit Hero Pools
 
-        playername = st.text_input("Player Name", "Gabe Newell", key="form_playername")
-        st.form_submit_button("Next", on_click=player_basic_info_callback)
+    - To run the BanPick tool, you are required to provide your hero pool and your position.""")
 
-if st.session_state['activate_hero_flag']: # add new content 
-    st.toast("Go Ahead!", icon="🌟")
-    with st.form("activate_hero_info"):
-        for t in ["Strength", "Agility", "Intelligence", "Universal"]:
-            with st.container():
-                st.markdown(f"""#### {t}""")
-                df = get_hero_csv_data(t)
-                # st.dataframe(df)
-                imgfilenames = list(df['Image filename'].str.strip())
-                heronames = list(df['Name'].str.strip())
-                img_array = get_image_data(imgfilenames)
-                toggle_vals = [False for _ in heronames]
-                for togi in range(len(toggle_vals)):
-                    if heronames[togi] in st.session_state['target_hero_pool']:
-                        toggle_vals[togi] = True
-                args_list = list(zip(img_array, heronames, toggle_vals))
-                row_display_component(args_list, image_width)
+    st.markdown(
+        """
+    <style>
+    button {
+        height: auto;
+        padding-top: 15px !important;
+        padding-bottom: 15px !important;
+    }
+    </style>
+    """,
+        unsafe_allow_html=True,
+    )
+
+
+    col1, col2, col3= st.columns(3)
+    with col1:
+        start_but = st.button("Edit Your Pool", on_click=input_user_info_callback)
+        download_button_placeholder = st.empty()
+
+    with col2:
+        ca_but = st.button("Import From Cache", on_click=load_from_cache_callback)
+
+    with col3:
+        # ! upload widget need to always display , also remember any button will refresh page when using if
+        # ! so far solution is use on_change
+        # after a button get clicked, the file will be run again
+        uploaded_file = st.file_uploader(
+            "Choose Hero Pools File", type=['json'], key=f"uploader_key", on_change=file_upload_onchange)
+
+
+    if st.session_state['activate_basic_info_flag']:
+        with st.form("player_basic_info"):
+            pos_rad = st.radio("Player Position (if you can play multi-pos, or you want to submit your friends' hero pool, re-edit in the next round)", [
+                'Pos 1 Carry',
+                'Pos 2 Mid',
+                'Pos 3 Offlane',
+                'Pos 4 Ganker',
+                'Pos 5 Support',
+            ], index=4, key="form_pos_rad")
+
+            playername = st.text_input("Player Name", "Gabe Newell", key="form_playername")
+            st.form_submit_button("Next", on_click=player_basic_info_callback)
+
+    if st.session_state['activate_hero_flag']: # add new content 
+        st.toast("Go Ahead!", icon="🌟")
+        with st.form("activate_hero_info"):
+            for t in ["Strength", "Agility", "Intelligence", "Universal"]:
+                with st.container():
+                    st.markdown(f"""#### {t}""")
+                    df = get_hero_csv_data(t)
+                    # st.dataframe(df)
+                    imgfilenames = list(df['Image filename'].str.strip())
+                    heronames = list(df['Name'].str.strip())
+                    img_array = get_image_data(imgfilenames)
+                    toggle_vals = [False for _ in heronames]
+                    for togi in range(len(toggle_vals)):
+                        if heronames[togi] in st.session_state['target_hero_pool']:
+                            toggle_vals[togi] = True
+                    args_list = list(zip(img_array, heronames, toggle_vals))
+                    row_display_component(args_list, image_width)
+                    
+            st.form_submit_button("Complete Your Edit", on_click=complete_edit_callback)
                 
-        st.form_submit_button("Complete Your Edit", on_click=complete_edit_callback)
-            
-            
-if st.session_state['display_stats_flag']:
-    # download 
-    download_json = dict()
-    download_json["ally_player_names"] = st.session_state["ally_player_names"]
-    download_json["ally_hero_pools"] = st.session_state["ally_hero_pools"]
-    download_json = json.dumps(download_json)
-    download_button_placeholder.download_button("Download Your Hero Pool Json File",
-                    download_json, "hero_pool_id_{st.session_state.data_ready_count}.json", key=f"dldbtn_{st.session_state.data_ready_count}")
-    
-    # display stats
-    cols = st.columns(5)
-    for i in range(5):
-        with cols[i]:
-            st.subheader(st.session_state["ally_player_names"][i])
-            st.write(st.session_state["ally_hero_pools"][i])
-# we shall have three options in the end
-# 1. continue edit
-# 2. download the file
-# 3. auto cache it
+                
+    if st.session_state['display_stats_flag']:
+        # download 
+        download_json = dict()
+        download_json["ally_player_names"] = st.session_state["ally_player_names"]
+        download_json["ally_hero_pools"] = st.session_state["ally_hero_pools"]
+        download_json = json.dumps(download_json)
+        download_button_placeholder.download_button("Download Your Hero Pool Json File",
+                        download_json, "hero_pool_id_{st.session_state.data_ready_count}.json", key=f"dldbtn_{st.session_state.data_ready_count}")
+        
+        # display stats
+        cols = st.columns(5)
+        for i in range(5):
+            with cols[i]:
+                st.subheader(st.session_state["ally_player_names"][i])
+                st.write(st.session_state["ally_hero_pools"][i])
+    # we shall have three options in the end
+    # 1. continue edit
+    # 2. download the file
+    # 3. auto cache it
 
