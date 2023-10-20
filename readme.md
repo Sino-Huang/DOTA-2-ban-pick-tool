@@ -3,10 +3,12 @@
 > App not setup: This app is still in development mode 
 
 ## Quickstart
-1. you shall have a python 3.10 environment 
+<!-- 1. you shall have a python 3.10 environment 
    1. if you have anaconda, then simply setup a conda env by run `conda create -y --name dota python=3.10 && conda activate dota`
 2. to install the app, run `pip install "https://github.com/Sino-Huang/DOTA-2-ban-pick-tool/releases/download/v0.1.0/dota-banpick-deployment.zip" --force-reinstall`
-3. after install the python package, simply run `dota-banpick` to start the app!
+3. after install the python package, simply run `dota-banpick` to start the app! -->
+
+- Sorry, no installation guide yet because it is still under-developing
 
 ## Purpose 
 - User friendly and newbee friendly DOTA 2 ban pick tool. 
