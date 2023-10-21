@@ -12,8 +12,9 @@ description = "BP helper for DOTA 2"
 readme = "readme.md"
 dependencies = [
     "requests","pandas","numpy", "undetected-chromedriver",
-    "tqdm","ipywidgets", "hydra-core",
-    "jupyterlab","selenium","django", "natsort", "Pillow", "streamlit", "watchdog"
+    "tqdm","ipywidgets", "hydra-core", 
+    "jupyterlab","selenium","django", "natsort", "Pillow",  "watchdog",
+    "streamlit", "streamlit-option-menu", "streamlit-extras"
 ]
 
 [project.optional-dependencies]
