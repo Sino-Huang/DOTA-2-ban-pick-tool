@@ -170,3 +170,7 @@ preprocessing/data/hero_wide_icons/
 
 # scraped static resources
 Valve_resources/hero_wide_icons/*.png
+frontend/media/*/*.png
+
+# scratch files
+*scratch*
