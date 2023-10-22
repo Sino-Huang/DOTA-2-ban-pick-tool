@@ -3,5 +3,18 @@
 {% block title %}Hero Grid{% endblock %}
 
 {% block content %}
-    <p>Hero Grid Page</p>
+    <div class="mt-6 px-6 py-12 bg-grey-400 rounded-xl">
+        <div class="grid grid-cols-2 gap-2">
+            {% for attr, heroes in heroes_by_attribute.items %}
+            <div class="grid grid-cols-11 gap-0.5">
+                <h3 class="col-span-11 text-xl text-center">{{ attr }}</h3>
+                {% for hero in heroes %}
+                <div>
+                    <img src="{{ hero.image.url }}" alt="{{ hero.name }}" class="rounded">
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}
