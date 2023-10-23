@@ -160,33 +160,61 @@ def update_ban_hero_multiselect():
             st.session_state.the_bp_node.ban_hero(banhero)
 
     # update placeholder stuffs
-    val, prepara_phase_suggested_pick_dict = alphabeta(
-        st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict)
-    prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
-        prepara_phase_suggested_pick_dict)
+    if "Preparation Drafting" in st.session_state.suggest_header_placeholder:
+        val, prepara_phase_suggested_pick_dict = alphabeta(
+            st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict)
+        prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
+            prepara_phase_suggested_pick_dict)
 
-    for ind, comboname in enumerate(prepara_phase_suggested_pick_dict):
-        impacted_player_lst = get_impacted_player_from_choice(
-            comboname)
-        if len(impacted_player_lst) > 0:
-            st.session_state[
-                f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname} for {' and '.join(impacted_player_lst)}"
-        else:
-            st.session_state[f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname}"
+        for ind, comboname in enumerate(prepara_phase_suggested_pick_dict):
+            impacted_player_lst = get_impacted_player_from_choice(
+                comboname)
+            if len(impacted_player_lst) > 0:
+                st.session_state[
+                    f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname} for {' and '.join(impacted_player_lst)}"
+            else:
+                st.session_state[f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname}"
 
-        pick_list = [
-            x for x, _ in prepara_phase_suggested_pick_dict[comboname]][:suggest_num]
-        ban_list = [
-            x for x in prepare_phase_suggested_ban_dict[comboname]][:suggest_num]
-        pick_ban_table = form_pick_ban_table(
-            pick_list, ban_list, comboname)
-        st.session_state[f"suggest_ban_table_col_{ind}_table"] = pick_ban_table
+            pick_list = [
+                x for x, _ in prepara_phase_suggested_pick_dict[comboname]][:suggest_num]
+            ban_list = [
+                x for x in prepare_phase_suggested_ban_dict[comboname]][:suggest_num]
+            pick_ban_table = form_pick_ban_table(
+                pick_list, ban_list, comboname)
+            st.session_state[f"suggest_ban_table_col_{ind}_table"] = pick_ban_table
 
-    # remove further table
-    while f"suggest_ban_table_col_{ind+1}_table" in st.session_state:
-        del st.session_state[f"suggest_ban_table_col_{ind+1}_table"]
-        del st.session_state[f"suggest_ban_table_col_{ind+1}_table_header"]
-        ind += 1
+        # remove further table
+        while f"suggest_ban_table_col_{ind+1}_table" in st.session_state:
+            del st.session_state[f"suggest_ban_table_col_{ind+1}_table"]
+            del st.session_state[f"suggest_ban_table_col_{ind+1}_table_header"]
+            ind += 1
+            
+    else:
+        val, prepara_phase_suggested_pick_dict = alphabeta(
+            st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, None)
+
+        for ind, comboname in enumerate(prepara_phase_suggested_pick_dict):
+            impacted_player_lst = get_impacted_player_from_choice(
+                comboname)
+            if len(impacted_player_lst) > 0:
+                st.session_state[
+                    f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname} for {' and '.join(impacted_player_lst)}"
+            else:
+                st.session_state[f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname}"
+
+            pick_list = [
+                x for x, _ in prepara_phase_suggested_pick_dict[comboname]][:suggest_num]
+
+            pick_avoid_table = form_pick_avoid_table(
+                pick_list, comboname)
+            st.session_state[f"suggest_ban_table_col_{ind}_table"] = pick_avoid_table
+
+        # remove further table
+        while f"suggest_ban_table_col_{ind+1}_table" in st.session_state:
+            del st.session_state[f"suggest_ban_table_col_{ind+1}_table"]
+            del st.session_state[f"suggest_ban_table_col_{ind+1}_table_header"]
+            ind += 1
+        
 
 def update_pick_hero_oppo_multiselect():
     oppopicklist = st.session_state['oppo_multiselect']
@@ -379,12 +407,11 @@ if __name__ == "__main__":
         st.subheader("Ban List")
         bancols = st.columns(2)
         with bancols[0]:
-            if "Preparation Drafting" in st.session_state.suggest_header_placeholder:
-                st.multiselect("Input Banned Heroes",
-                            options=st.session_state['name_abbrev_dict_keys_list'],
-                            format_func=lambda x: st.session_state['name_abbrev_dict'][x],
-                            key="ban_multiselect", placeholder="Ban a hero",
-                            on_change=update_ban_hero_multiselect)
+            st.multiselect("Input Banned Heroes",
+                        options=st.session_state['name_abbrev_dict_keys_list'],
+                        format_func=lambda x: st.session_state['name_abbrev_dict'][x],
+                        key="ban_multiselect", placeholder="Ban a hero",
+                        on_change=update_ban_hero_multiselect)
         with bancols[1]:
             with st.expander("Display", expanded=True):
                 st.empty()
@@ -395,7 +422,6 @@ if __name__ == "__main__":
     # --------------- Pick -------------------------------
     if "ally_name_list" in st.session_state:
         st.subheader("Pick List")
-        st.info("Input the real picked heroes")
         ally_pick_column, oppo_pick_column = st.columns(2)
 
         with ally_pick_column:
