@@ -66,7 +66,19 @@ def get_hero_csv_data(t_type):
     df = df[df['Type'].str.strip() == t_type]
     return df
 
-
+@st.cache_data
+def get_name_abbrev_dict():
+    hero_abbrev_fp = os.path.join(record_folder, "hero_abbrev.csv")
+    
+    df = pd.read_csv(hero_abbrev_fp)
+    output_dict = dict()
+    for index, attr in df.iterrows():
+        name = attr['Name']
+        abbrev = attr['Abbrev']
+        output_dict[name] = f"{abbrev} {name}"
+    
+    return output_dict
+    
 @st.cache_data
 def get_pos_1_hero_list():
     with open(os.path.join(record_folder, 'default_pos_1_hero_pool.txt'), 'r') as f:
@@ -109,6 +121,13 @@ def get_hero_csv_data_filtered(hero_list):
     df = df[df['Name'].str.strip().isin(hero_list)]
     return df
 
+
+@st.cache_data
+def get_hero_csv_data_raw():
+    df = pd.read_csv(hero_name_csv_fp, header=None)
+    df.columns = ["Name", "Image filename", "Type"]
+    df.index = list(df['Name'].str.strip())
+    return df
 
 @st.cache_data
 def get_image_data(imgfilenames):

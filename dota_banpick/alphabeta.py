@@ -18,9 +18,9 @@ import pickle
 import time
 
 from natsort import natsorted
-from config import ACTIVATE_SAVING_CACHE, DEPTH_LIMIT, PRUNE_WORST_HERO_NUM, SUGGESTION_NUM
+from config import ACTIVATE_SAVING_CACHE, DEPTH_LIMIT, PRUNE_WORST_HERO_NUM, SUGGESTION_NUM, versus_winrate_matrix, with_winrate_matrix, counter_rate_matrix
 from pickaction import StateNode
-from heuristic import calculate_heuristic
+from heuristic import calculate_heuristic, compute_associated_ban_suggestion_first_round
 from tqdm.auto import tqdm
 from multiprocessing import Manager, Pool
 from tqdm.contrib.concurrent import process_map, thread_map
@@ -33,25 +33,6 @@ from multiprocessing.pool import ThreadPool
 # this file implements the alpha beta pruning method
 
 # need a function to detect whether need to run alpha beta
-
-# ! global variable
-record_folder = os.path.join(os.path.dirname(__file__), "data/records")
-
-versus_winrate_matrix_fp = os.path.join(
-    record_folder, "versus_winrate_matrix.pkl")
-with_winrate_matrix_fp = os.path.join(
-    record_folder, "with_winrate_matrix.pkl")
-counter_rate_matrix_fp = os.path.join(
-    record_folder, "counter_rate_matrix.pkl")
-
-with open(versus_winrate_matrix_fp, 'rb') as f:
-    versus_winrate_matrix = pickle.load(f)
-
-with open(with_winrate_matrix_fp, 'rb') as f:
-    with_winrate_matrix = pickle.load(f)
-
-with open(counter_rate_matrix_fp, 'rb') as f:
-    counter_rate_matrix = pickle.load(f)
 
 
 class ABCutOffException(Exception):
@@ -147,7 +128,7 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
 
     if depth > depth_limit or node.is_terminated():
         value = calculate_heuristic(
-            node, counter_rate_matrix, with_winrate_matrix)
+            node.get_ally_hero_list(), node.get_opponent_hero_list())
         if cache_dict is not None and activate_saving_cache:
             cache_dict[str(node)] = (value, None)
         return value, None
@@ -184,7 +165,7 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                 try:
                     workers_num = 16
                     process_map(support_process_map_func, mapargs,
-                                max_workers=workers_num, chunksize=20, leave=False)
+                                max_workers=workers_num, chunksize=40, leave=False)
                 except ABCutOffException:
                     pass
                 
@@ -370,8 +351,8 @@ if __name__ == "__main__":
     #     .add_hero("Tiny", False, 3).add_hero("Axe", False, 4)
 
     # # round 3
-    start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
-        .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)
+    # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
+    #     .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)
         
     # # round 3 conflict situation
     # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
@@ -394,7 +375,24 @@ if __name__ == "__main__":
     end_time = time.time()
     elapsed_time = end_time - start_time  # in second
     print("Elapsed time in seconds: ", elapsed_time)
-
+    
+    prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict)
+    
+    print("Round 3")
+    
+    # round 3
+    start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
+        .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)
+    
+    start_time = time.time()
+    value, suggested_hero_pick_dict = alphabeta(
+        start_node, 0, -999, 999, True, depth_limit, None)
+    
+    print(suggested_hero_pick_dict)
+    end_time = time.time()
+    elapsed_time = end_time - start_time  # in second
+    print("Elapsed time in seconds: ", elapsed_time)        
+    
     # print("test ban hero")
     # start_node.ban_hero("Muerta")
     # start_time = time.time()

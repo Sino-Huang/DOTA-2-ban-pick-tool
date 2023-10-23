@@ -38,7 +38,7 @@ def show_item_component(img, name, toggle_val = None):
         with cols[1]:
             st.caption(cap_text)
         with cols[0]:
-            st.toggle("", label_visibility="collapsed", value=toggle_val, key=f"toggle_{name}")
+            st.toggle("enable", label_visibility="collapsed", value=toggle_val, key=f"toggle_{name}")
             
     else:
         st.image(img,  use_column_width="always")
@@ -52,6 +52,7 @@ def player_basic_info_callback():
     for pos_ind in pos_inds:
         for h in st.session_state["default_hero_pools"][pos_ind]:
             pool_set.add(h)
+    # ! these are the keys for player data 
     st.session_state["target_hero_pool"] = list(pool_set)
     st.session_state["target_pos"] = pos_inds
     st.session_state["target_player_name"]= st.session_state.form_playername
@@ -92,19 +93,6 @@ def input_user_info_callback():
     st.session_state['display_stats_flag'] = False
     st.session_state['activate_basic_info_flag'] = True
     
-
-
-def load_from_cache_callback():
-    st.toast("Load From Cache", icon="📕")
-    st.session_state['activate_hero_flag'] = False
-    cached_dict = load_cached_name_hero_pool_dict()
-    if len(cached_dict) == 0:
-        st.warning(
-            "Cached Dict Has No Data, You Shall Try Other Methods!", icon="❤️‍🔥")
-    else:
-        # display hero pool
-        st.session_state['display_stats_flag'] = True
-        st.session_state.data_ready_count += 1
     
 def file_upload_onchange():
     uploaded_file = st.session_state['uploader_key']
@@ -200,7 +188,7 @@ if __name__ == "__main__":
                 st.session_state['activate_hero_flag'] = False
                 st.session_state['display_stats_flag'] = True
                 st.session_state['activate_basic_info_flag'] = False
-                st.experimental_rerun()
+                st.rerun()
     
     
     if st.session_state['activate_basic_info_flag']:
@@ -256,7 +244,7 @@ if __name__ == "__main__":
                 st.session_state['activate_hero_flag'] = False
                 st.session_state['display_stats_flag'] = False
                 st.session_state['activate_basic_info_flag'] = True
-                st.experimental_rerun()
+                st.rerun()
         
         # display stats
         for k in cache_dict:

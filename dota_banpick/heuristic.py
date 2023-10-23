@@ -19,6 +19,7 @@ from glob import glob
 import os
 
 from natsort import natsorted
+from tqdm.auto import tqdm
 from config import *
 from pickaction import StateNode
 import logging
@@ -27,30 +28,15 @@ import itertools
 import pickle
 
 
-# global variable
-record_folder = os.path.join(os.path.dirname(__file__), "data/records")
-
-
-counter_rate_matrix_fp = os.path.join(
-    record_folder, "counter_rate_matrix.pkl")
-
-with open(counter_rate_matrix_fp, 'rb') as f:
-    versus_counter_matrix = pickle.load(f)
-    
-    
-def calculate_heuristic(statenode:StateNode, counter_rate_matrix, with_winrate_matrix,
+def calculate_heuristic(ally_hero_list, opponent_hero_list,
                         counter_weight=COUNTER_WEIGHT,
-                        pos_1_counter_temperature=POS_1_COUNTER_TEMPERATURE,
-                        pos_2_counter_temperature=POS_2_COUNTER_TEMPERATURE,
-                        pos_3_counter_temperature=POS_3_COUNTER_TEMPERATURE,
-                        pos_4_counter_temperature=POS_4_COUNTER_TEMPERATURE,
-                        pos_5_counter_temperature=POS_5_COUNTER_TEMPERATURE,
+                        counter_temperature_list=COUNTER_TEMPERATURE_LIST
 
                         ):
     """it will return the advantage value for your team. 
     Your team's goal is to maximise it, while the opponent team's goal is to minimise it
     versus_matrix should be counter rate matrix 
-    
+
     Args:
         statenode (StateNode): _description_
         versus_matrix (_type_): counter rate matrix
@@ -65,34 +51,9 @@ def calculate_heuristic(statenode:StateNode, counter_rate_matrix, with_winrate_m
     Returns:
         float: numeric score
     """
-    
-    counter_temperature_list = [pos_1_counter_temperature,
-                                pos_2_counter_temperature,
-                                pos_3_counter_temperature,
-                                pos_4_counter_temperature,
-                                pos_5_counter_temperature]
-    
-    ally_hero_list = [
-        statenode.ally_pos_1_hero,
-        statenode.ally_pos_2_hero,
-        statenode.ally_pos_3_hero,
-        statenode.ally_pos_4_hero,
-        statenode.ally_pos_5_hero,
-    ]
-    
-    opponent_hero_list = [
-        statenode.opponent_pos_1_hero,
-        statenode.opponent_pos_2_hero,
-        statenode.opponent_pos_3_hero,
-        statenode.opponent_pos_4_hero,
-        statenode.opponent_pos_5_hero,
-    ]
-    
-    
-    opponent_hero_list_filtered = [x for x in opponent_hero_list if x is not None]
 
-    # for versus 
-    if len(opponent_hero_list_filtered) == 0:
+    # for versus
+    if opponent_hero_list.count(None) == 5:
         global_vs_winrate = 0.5
     else:
         global_versus_winrate_lst = []
@@ -101,9 +62,11 @@ def calculate_heuristic(statenode:StateNode, counter_rate_matrix, with_winrate_m
                 local_versus_winrate_lst = []
                 for oppo_pos_ind, oppo_hero in enumerate(opponent_hero_list):
                     if oppo_hero is not None:
-                        score = counter_rate_matrix[ally_hero][oppo_hero] * counter_weight 
-                        score = score * counter_temperature_list[ally_pos_ind][oppo_pos_ind]
-                        score = score + 0.5 # 0.5 as base
+                        score = counter_rate_matrix[ally_hero][oppo_hero] * \
+                            counter_weight
+                        score = score * \
+                            counter_temperature_list[ally_pos_ind][oppo_pos_ind]
+                        score = score + 0.5  # 0.5 as base
                         local_versus_winrate_lst.append(score)
                 if len(local_versus_winrate_lst) > 0:
                     local_vs_winrate = np.mean(local_versus_winrate_lst)
@@ -114,7 +77,7 @@ def calculate_heuristic(statenode:StateNode, counter_rate_matrix, with_winrate_m
             global_vs_winrate = np.mean(global_versus_winrate_lst)
         else:
             global_vs_winrate = 0.5
-    
+
     # for with
     global_with_winrate_lst = []
     available_heros = [h for h in ally_hero_list if h is not None]
@@ -127,37 +90,24 @@ def calculate_heuristic(statenode:StateNode, counter_rate_matrix, with_winrate_m
         global_with_winrate = np.mean(global_with_winrate_lst)
     else:
         global_with_winrate = 0.5
-        
+
     heuristic = np.mean([global_vs_winrate, global_with_winrate])
-    
+
     return heuristic
 
-def compute_bad_picks_for_each_pos(statenode:StateNode,
-                                   display_num=4,
-                                   ):
+
+def compute_bad_picks_for_each_pos(statenode: StateNode,
+                                   display_num=4):
     # output structure : {pos: [bad_hero_ele,]}
     # give a list of heros that the opponent may counter you most
 
     # filter available hero pools
-    hero_pool_lst= [
-        statenode.ally_pos_1_hero_pool,
-        statenode.ally_pos_2_hero_pool,
-        statenode.ally_pos_3_hero_pool,
-        statenode.ally_pos_4_hero_pool,
-        statenode.ally_pos_5_hero_pool,
-    ]
-    opponent_hero_list = [
-        statenode.opponent_pos_1_hero,
-        statenode.opponent_pos_2_hero,
-        statenode.opponent_pos_3_hero,
-        statenode.opponent_pos_4_hero,
-        statenode.opponent_pos_5_hero,
-    ]
+    hero_pool_lst = statenode.ally_hero_pools
+    opponent_hero_list = statenode.opponent_heros
     opponent_hero_list = [h for h in opponent_hero_list if h is not None]
     if len(opponent_hero_list) == 0:
         return None
-    
-    
+
     filtered_hero_pool_lst = []
     for pool in hero_pool_lst:
         pool_copy = copy.deepcopy(pool)  # type: list
@@ -165,28 +115,72 @@ def compute_bad_picks_for_each_pos(statenode:StateNode,
             if unavailable_hero in pool_copy:
                 pool_copy.remove(unavailable_hero)
         filtered_hero_pool_lst.append(pool_copy)
+    
 
     # calculate versus rate
-    output_dict = dict() # {dota_position: [bad_heros]}
+    output_dict = dict()  # {dota_position: [bad_heros]}
     for pos_ind, pos_hero_pool in enumerate(filtered_hero_pool_lst):
-        hero_counterrate_tuple_list = [] # [(hero, local_vs_winrate)]
+        hero_counterrate_tuple_list = []  # [(hero, local_vs_winrate)]
         for hero in pos_hero_pool:
-            # cal versus winrate 
-            local_vs_counterrate_lst = [versus_counter_matrix[hero][oppo_hero] for oppo_hero in opponent_hero_list]
+            # cal versus winrate
+            
+            local_vs_counterrate_lst = [
+                counter_rate_matrix[hero][oppo_hero] for oppo_hero in opponent_hero_list]
             local_vs_counterrate = np.mean(local_vs_counterrate_lst)
             hero_counterrate_tuple_list.append((hero, local_vs_counterrate))
         # once we get hero_winrate_tuple_list, we sort it and get display_num of it
-        hero_counterrate_tuple_list_trunc = sorted(hero_counterrate_tuple_list, key= lambda x: x[1])[:display_num]
-        output_dict[pos_ind+1] = [x[0] for x in hero_counterrate_tuple_list_trunc]
         
+        hero_counterrate_tuple_list_trunc = sorted(
+            hero_counterrate_tuple_list, key=lambda x: x[1])[:display_num]
+        output_dict[pos_ind+1] = [x[0]
+                                  for x in hero_counterrate_tuple_list_trunc]
+
     return output_dict
+
+
+def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict):
+    # suggested_hero_pick_dict[str_pick_choice] = updated_suggested_hero_list
+    # output structure : suggested_hero_ban_dict[str_pick_choice] = suggested_ban_hero_list
+    suggested_hero_ban_dict = dict()
+    for str_pick_choice, suggested_hero_list in suggested_hero_pick_dict.items():
+        suggested_ban_hero_list = []
+        pos_choices = eval(str_pick_choice)
+        if pos_choices not in FIRST_ROUND_PICK_CHOICE:
+            assert RuntimeError("Not getting first round pos choice")
+        pos_choices_ind = FIRST_ROUND_PICK_CHOICE.index(pos_choices)
+        counter_poses = FIRST_ROUND_COUNTER_CHOICE[pos_choices_ind]
+
+        counter_pos_hero_combos = [(x, y) for x in default_hero_pools[counter_poses[0] - 1]
+                                   for y in default_hero_pools[counter_poses[1] - 1] if x != y]
+        for our_combo, _ in tqdm(suggested_hero_list, desc=f"for pos {str_pick_choice}"):
+            counter_max_score = -999
+            counter_max_ind = -999
+            for oppo_ind, oppo_combo in enumerate(counter_pos_hero_combos):
+                if oppo_combo[0] in our_combo or oppo_combo[1] in our_combo:
+                    continue
+
+                score = counter_rate_matrix[oppo_combo[0]][our_combo[0]] * BAN_SUGGEST_FRONT_POS_COUTNER_WEIGHT * \
+                    BAN_SUGGEST_FRONT_POS_COUTNER_WEIGHT  # pos at front is more significant, thus weigh more
+                score += counter_rate_matrix[oppo_combo[0]][our_combo[1]]
+                score += counter_rate_matrix[oppo_combo[1]
+                                             ][our_combo[0]] * BAN_SUGGEST_FRONT_POS_COUTNER_WEIGHT
+                score += counter_rate_matrix[oppo_combo[1]][our_combo[1]]
+
+                if counter_max_score < score:
+                    counter_max_score = score
+                    counter_max_ind = oppo_ind
+            suggested_ban_hero_list.append(
+                counter_pos_hero_combos[counter_max_ind])
+        suggested_hero_ban_dict[str_pick_choice] = suggested_ban_hero_list
+
+    return suggested_hero_ban_dict
+
 
 if __name__ == "__main__":
     # debug
     logging.basicConfig(
         format='%(levelname)s:%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
 
-    record_folder = os.path.join(os.path.dirname(__file__), "data/records")
     hero_pool_fps = glob(os.path.join(
         record_folder, "default_pos_*_hero_pool.txt"))
     hero_pool_fps = natsorted(hero_pool_fps)
@@ -203,23 +197,8 @@ if __name__ == "__main__":
     start_node.add_hero('Faceless Void',True,1)
     start_node.add_hero('Lone Druid',False,2)
     start_node.add_hero('Ancient Apparition',False,5)
-    
-    
-    vs_winrate_matrix_fp = os.path.join(record_folder, "versus_winrate_matrix.pkl")
-    with_winrate_matrix_fp = os.path.join(record_folder, "with_winrate_matrix.pkl")
-    counter_rate_matrix_fp = os.path.join(record_folder, "counter_rate_matrix.pkl")
-    
-    
-    with open(vs_winrate_matrix_fp, 'rb') as f:
-        vs_winrate_matrix = pickle.load(f)
-    
-    with open(with_winrate_matrix_fp, 'rb') as f:
-        with_winrate_matrix = pickle.load(f)
-        
-    with open(counter_rate_matrix_fp, 'rb') as f:
-        counter_rate_matrix = pickle.load(f)
-        
-    compute_bad_picks_for_each_pos(start_node, counter_rate_matrix)
+
+    compute_bad_picks_for_each_pos(start_node)
 # {1: ['Arc Warden', 'Alchemist', 'Anti-Mage', 'Spectre'],
 #  2: ['Pugna', 'Alchemist', 'Huskar', 'Anti-Mage'],
 #  3: ['Abaddon', 'Night Stalker', 'Legion Commander', 'Huskar'],
