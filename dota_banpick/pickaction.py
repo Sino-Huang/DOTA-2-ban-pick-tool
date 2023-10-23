@@ -206,6 +206,7 @@ class StateNode:
 
             else:
                 logging.warning("invalid add ally hero case")
+                return self
 
         else:
             # two sit, one is to progress to new round, the other is to achieve current round
@@ -228,6 +229,7 @@ class StateNode:
 
             else:
                 logging.warning("invalid add opponent hero case")
+                return self
 
         if auto_guess_flag:
             if is_ally:

@@ -245,6 +245,7 @@ def update_pick_hero_oppo_multiselect():
     # filter ban list, which including selected unavailable ones
     oppopicklist = [
         x for x in oppopicklist if x not in st.session_state.the_bp_node.ban_lst]
+    nonecount_before = st.session_state.the_bp_node.opponent_heros.count(None)
     for opohero in oppopicklist:
         st.session_state.the_bp_node.add_hero(opohero, False, -1)
         nonecount = st.session_state.the_bp_node.opponent_heros.count(None)
@@ -256,36 +257,37 @@ def update_pick_hero_oppo_multiselect():
                 st.session_state.suggest_header_placeholder = "Final Round Drafting Suggestion"
             st.session_state.info_placeholder = (
                 "Try to conter the picked ones and avoid picking bad heroes.")
-            with st.spinner("AI Searching..."):
-                val, prepara_phase_suggested_pick_dict = alphabeta(
-                    st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, None)
+            if nonecount_before != nonecount:
+                with st.spinner("AI Searching..."):
+                    val, prepara_phase_suggested_pick_dict = alphabeta(
+                        st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, None)
 
-            output_dict = compute_bad_picks_for_each_pos(
-                st.session_state.the_bp_node, suggest_num)
-            st.session_state.bad_picks_for_each_pos = output_dict
+                output_dict = compute_bad_picks_for_each_pos(
+                    st.session_state.the_bp_node, suggest_num)
+                st.session_state.bad_picks_for_each_pos = output_dict
 
-            for ind, comboname in enumerate(prepara_phase_suggested_pick_dict):
-                impacted_player_lst = get_impacted_player_from_choice(
-                    comboname)
-                if len(impacted_player_lst) > 0:
-                    st.session_state[
-                        f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname} for {' and '.join(impacted_player_lst)}"
-                else:
-                    st.session_state[f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname}"
+                for ind, comboname in enumerate(prepara_phase_suggested_pick_dict):
+                    impacted_player_lst = get_impacted_player_from_choice(
+                        comboname)
+                    if len(impacted_player_lst) > 0:
+                        st.session_state[
+                            f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname} for {' and '.join(impacted_player_lst)}"
+                    else:
+                        st.session_state[f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname}"
 
-                pick_list = [
-                    x for x, _ in prepara_phase_suggested_pick_dict[comboname]]
-                pick_list = get_diverse_suggest_lst(pick_list, suggest_num)
+                    pick_list = [
+                        x for x, _ in prepara_phase_suggested_pick_dict[comboname]]
+                    pick_list = get_diverse_suggest_lst(pick_list, suggest_num)
 
-                pick_sugg_table = form_pick_avoid_table(
-                    pick_list, comboname)
-                st.session_state[f"suggest_ban_table_col_{ind}_table"] = pick_sugg_table
+                    pick_sugg_table = form_pick_avoid_table(
+                        pick_list, comboname)
+                    st.session_state[f"suggest_ban_table_col_{ind}_table"] = pick_sugg_table
 
-            # remove further table
-            while f"suggest_ban_table_col_{ind+1}_table" in st.session_state:
-                del st.session_state[f"suggest_ban_table_col_{ind+1}_table"]
-                del st.session_state[f"suggest_ban_table_col_{ind+1}_table_header"]
-                ind += 1
+                # remove further table
+                while f"suggest_ban_table_col_{ind+1}_table" in st.session_state:
+                    del st.session_state[f"suggest_ban_table_col_{ind+1}_table"]
+                    del st.session_state[f"suggest_ban_table_col_{ind+1}_table_header"]
+                    ind += 1
 
 
 def ally_pick_select(select_key, ally_ind):
@@ -443,53 +445,73 @@ if __name__ == "__main__":
                     for tti, h in enumerate(st.session_state.the_bp_node.ally_heros):
                         if h is None:
                             not_picked_inds.append(tti)
-                    
-                    badpick_cols = st.columns(len(not_picked_inds))
-                    for ttttti, sugbanind in enumerate(not_picked_inds):
-                        with badpick_cols[ttttti]:
-                            lst = get_online_image_urls(
-                                list(bad_picks_for_each_pos.values())[sugbanind])
-                            target_bad_table = pd.DataFrame(
-                                lst, columns=[f'Bad Pos {sugbanind+1}'])
-                            # st.dataframe(target_bad_table)
-                            st.markdown(table_with_images(df=target_bad_table, url_columns=(
-                                f'Bad Pos {sugbanind+1}',)), unsafe_allow_html=True)
+                    if len(not_picked_inds) > 0:
+                        badpick_cols = st.columns(len(not_picked_inds))
+                        target_bad_table = dict()
+                        for ttttti, sugbanind in enumerate(not_picked_inds):
+                            with badpick_cols[ttttti]:
+                                lst = get_online_image_urls(
+                                    list(bad_picks_for_each_pos.values())[sugbanind])
+                                target_bad_table[f'Bad Pos {sugbanind+1}'] = lst
+                        target_bad_table = pd.DataFrame(target_bad_table)
+                        # st.dataframe(target_bad_table)
+                        st.markdown(table_with_images(df=target_bad_table, url_columns=[f'Bad Pos {sugbanind+1}' for sugbanind in not_picked_inds]), unsafe_allow_html=True)
 
     # ----------------- BAN  LIST --------------------------------
+    if 'the_bp_node' in st.session_state:
+        cur_a_pick_num = 5 - st.session_state.the_bp_node.ally_heros.count(None)       
+        cur_o_pick_num = 5 - st.session_state.the_bp_node.opponent_heros.count(None)   
+        # cur_round = st.session_state.the_bp_node.cur_round
+         
+    
     if "suggest_header_placeholder" in st.session_state:
-
         st.subheader("Ban List")
         bancols = st.columns(2)
-        with bancols[0]:
-            st.multiselect("Input Banned Heroes",
-                           options=st.session_state['name_abbrev_dict_keys_list'],
-                           format_func=lambda x: st.session_state['name_abbrev_dict'][x],
-                           key="ban_multiselect", placeholder="Ban a hero",
-                           on_change=update_ban_hero_multiselect)
-        with bancols[1]:
-            with st.expander("Display", expanded=True):
-                st.empty()
-                row_display_component(
-                    st.session_state['ban_image_args_list'], 9, show_image_compo)
+        if cur_a_pick_num in [0, 2, 3, 5]:
+            with bancols[0]:
+                st.multiselect("Input Banned Heroes",
+                            options=st.session_state['name_abbrev_dict_keys_list'],
+                            format_func=lambda x: st.session_state['name_abbrev_dict'][x],
+                            key="ban_multiselect", placeholder="Ban a hero",
+                            on_change=update_ban_hero_multiselect)
 
     # -----------------------------------------------------------
     # --------------- Pick -------------------------------
     if "ally_name_list" in st.session_state:
+        ally_name_list = st.session_state.ally_name_list
         st.subheader("Pick List")
         ally_pick_column, oppo_pick_column = st.columns([0.5, 0.5])
+        if cur_o_pick_num in [0, 2, 4]:   
+            with ally_pick_column:
+                ally_hero_display_cols = st.columns(5)
+                for ally_ind in range(len(ally_hero_display_cols)):
+                    with ally_hero_display_cols[ally_ind]:
+                        st.selectbox(f"Ally {ally_name_list[ally_ind]}",
+                                    options=st.session_state['name_abbrev_dict_keys_list'],
+                                    format_func=lambda x: st.session_state['name_abbrev_dict'][x],
+                                    index=None,
+                                    key=f"hero_pick_selectbox_{ally_name_list[ally_ind]}",
+                                    on_change=ally_pick_select, args=(f"hero_pick_selectbox_{ally_name_list[ally_ind]}", ally_ind))
+        
+        if cur_a_pick_num in [2,4,5]:
+            with oppo_pick_column:
+                # multiselect box for selecting oppo because we dont know their pos
+                st.multiselect("Input Opponent Heroes",
+                            options=st.session_state['name_abbrev_dict_keys_list'],
+                            format_func=lambda x: st.session_state['name_abbrev_dict'][x],
+                            key="oppo_multiselect", placeholder="Pick opponent heroes",
+                            on_change=update_pick_hero_oppo_multiselect)
 
-        with ally_pick_column:
-            ally_name_list = st.session_state.ally_name_list
+            
+
+    # ------------ Display ---------------------
+        st.subheader("Display")
+        ally_pick_column_dis, oppo_pick_column_dis = st.columns([0.5, 0.5])
+        with ally_pick_column_dis:
             ally_hero_display_cols = st.columns(5)
             for ally_ind in range(len(ally_hero_display_cols)):
                 with ally_hero_display_cols[ally_ind]:
-                    st.selectbox(f"Ally {ally_name_list[ally_ind]}",
-                                 options=st.session_state['name_abbrev_dict_keys_list'],
-                                 format_func=lambda x: st.session_state['name_abbrev_dict'][x],
-                                 index=None,
-                                 key=f"hero_pick_selectbox_{ally_name_list[ally_ind]}",
-                                 on_change=ally_pick_select, args=(f"hero_pick_selectbox_{ally_name_list[ally_ind]}", ally_ind))
-                    with st.expander("Display", expanded=True):
+                    with st.expander(f"A {ally_name_list[ally_ind]}", expanded=True):
                         st.empty()
                         target_hero_in_node = st.session_state.the_bp_node.ally_heros[ally_ind]
                         if target_hero_in_node is not None:
@@ -497,22 +519,15 @@ if __name__ == "__main__":
                                             ['Image filename'].loc[target_hero_in_node].strip()]
                             img = get_image_data(imgfilenames)
                             st.image(img, caption=target_hero_in_node,
-                                     use_column_width="always")
-
-        with oppo_pick_column:
-            # multiselect box for selecting oppo because we dont know their pos
-            st.multiselect("Input Opponent Heroes",
-                           options=st.session_state['name_abbrev_dict_keys_list'],
-                           format_func=lambda x: st.session_state['name_abbrev_dict'][x],
-                           key="oppo_multiselect", placeholder="Pick opponent heroes",
-                           on_change=update_pick_hero_oppo_multiselect)
-
+                                        use_column_width="always")
+                            
+        with oppo_pick_column_dis:
             oppo_name_list = [" ".join(x.split(" ")[:2])
                               for x in pos_description]
             oppo_hero_display_cols = st.columns(5)
             for oppo_ind in range(len(oppo_hero_display_cols)):
                 with oppo_hero_display_cols[oppo_ind]:
-                    with st.expander(f"Oppo {oppo_name_list[oppo_ind]}", expanded=True):
+                    with st.expander(f"O {oppo_name_list[oppo_ind]}", expanded=True):
                         st.empty()
                         target_hero_in_node = st.session_state.the_bp_node.opponent_heros[oppo_ind]
                         if target_hero_in_node is not None:
@@ -521,3 +536,8 @@ if __name__ == "__main__":
                             img = get_image_data(imgfilenames)
                             st.image(img, caption=target_hero_in_node,
                                      use_column_width="always")
+        
+        with st.expander("Ban List Display", expanded=True):
+            st.empty()
+            row_display_component(
+                st.session_state['ban_image_args_list'], 18, show_image_compo)
