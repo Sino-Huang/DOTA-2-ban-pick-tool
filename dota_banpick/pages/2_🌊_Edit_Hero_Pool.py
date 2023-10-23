@@ -225,7 +225,7 @@ if __name__ == "__main__":
                     args_list = list(zip(img_array, heronames, toggle_vals))
                     row_display_component(args_list, image_width)
                     
-            st.form_submit_button("Complete Your Edit", on_click=complete_edit_callback)
+            st.form_submit_button("Complete Your Edit", on_click=complete_edit_callback, type="primary")
                 
                 
     if st.session_state['display_stats_flag']:

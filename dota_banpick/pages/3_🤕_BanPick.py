@@ -20,7 +20,6 @@ from dota_banpick.st_cache import get_heros, pos_description, get_hero_csv_data_
 image_width = 11
 suggest_num = 5
 
-
 def row_display_component(component_arg_list, width, show_compo_func):
     chunks_width = []
     for i in range(0, len(component_arg_list), width):
@@ -41,6 +40,23 @@ def show_item_component(img, name):
                   key=f"bpinput_{name}", on_change=inp_on_change, args=(f"bpinput_{name}", name))
     st.image(img, caption=name,  use_column_width="always")
 
+
+def get_diverse_suggest_lst(sugest_lst, limit):
+    output_list = []
+    occur_list = []
+    for comb in sugest_lst:
+        dontuse_flag = False
+        for h in comb:
+            if occur_list.count(h) >= 2:
+                dontuse_flag = True
+                break
+        if not dontuse_flag:
+            output_list.append(comb)
+            for h in comb:
+                occur_list.append(h)
+        if len(output_list) >= limit:
+            break
+    return output_list
 
 def inp_on_change(bpinput_key, name):
     input_val = st.session_state[bpinput_key]
@@ -176,9 +192,12 @@ def update_ban_hero_multiselect():
                 st.session_state[f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname}"
 
             pick_list = [
-                x for x, _ in prepara_phase_suggested_pick_dict[comboname]][:suggest_num]
+                x for x, _ in prepara_phase_suggested_pick_dict[comboname]]
+            pick_list = get_diverse_suggest_lst(pick_list, suggest_num)
+            
             ban_list = [
-                x for x in prepare_phase_suggested_ban_dict[comboname]][:suggest_num]
+                x for x in prepare_phase_suggested_ban_dict[comboname]]
+            ban_list = get_diverse_suggest_lst(ban_list, suggest_num)
             pick_ban_table = form_pick_ban_table(
                 pick_list, ban_list, comboname)
             st.session_state[f"suggest_ban_table_col_{ind}_table"] = pick_ban_table
@@ -203,7 +222,8 @@ def update_ban_hero_multiselect():
                 st.session_state[f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname}"
 
             pick_list = [
-                x for x, _ in prepara_phase_suggested_pick_dict[comboname]][:suggest_num]
+                x for x, _ in prepara_phase_suggested_pick_dict[comboname]]
+            pick_list = get_diverse_suggest_lst(pick_list, suggest_num)
 
             pick_avoid_table = form_pick_avoid_table(
                 pick_list, comboname)
@@ -246,7 +266,8 @@ def update_pick_hero_oppo_multiselect():
                     st.session_state[f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname}"
 
                 pick_list = [
-                    x for x, _ in prepara_phase_suggested_pick_dict[comboname]][:suggest_num]
+                    x for x, _ in prepara_phase_suggested_pick_dict[comboname]]
+                pick_list = get_diverse_suggest_lst(pick_list, suggest_num)
 
                 pick_sugg_table = form_pick_avoid_table(
                     pick_list, comboname)
@@ -296,9 +317,11 @@ def ready_to_bp_on_click():
             st.session_state[f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname}"
 
         pick_list = [
-            x for x, _ in prepara_phase_suggested_pick_dict[comboname]][:suggest_num]
+            x for x, _ in prepara_phase_suggested_pick_dict[comboname]]
+        pick_list = get_diverse_suggest_lst(pick_list, suggest_num)
         ban_list = [
-            x for x in prepare_phase_suggested_ban_dict[comboname]][:suggest_num]
+            x for x in prepare_phase_suggested_ban_dict[comboname]]
+        ban_list = get_diverse_suggest_lst(ban_list, suggest_num)
         pick_ban_table = form_pick_ban_table(
             pick_list, ban_list, comboname)
         st.session_state[f"suggest_ban_table_col_{ind}_table"] = pick_ban_table
@@ -345,7 +368,7 @@ if __name__ == "__main__":
             st.session_state['name_abbrev_dict'].keys())
 
     ready_to_bp = False
-    st.title("Refresh (F5) the page if you want to BP your next game!")
+    st.title("Refresh (F5) to BP your next game. Confirm your team structure at sidebar to start.")
     player_cache_dict = load_cached_name_hero_pool_dict()
     alpha_beta_cache_dict = init_warmup_cache_dict()
 
@@ -382,7 +405,7 @@ if __name__ == "__main__":
             col_ind_c = 0
             while f"suggest_ban_table_col_{col_ind_c}_table" in st.session_state:
                 col_ind_c += 1
-            combocols = st.columns(col_ind_c, gap="large")
+            combocols = st.columns(col_ind_c, gap="small")
             for ind in range(len(combocols)):
                 with combocols[ind]:
                     st.info(
@@ -412,7 +435,7 @@ if __name__ == "__main__":
             with st.expander("Display", expanded=True):
                 st.empty()
                 row_display_component(
-                    st.session_state['ban_image_args_list'], 6, show_image_compo)
+                    st.session_state['ban_image_args_list'], 9, show_image_compo)
 
     # -----------------------------------------------------------
     # --------------- Pick -------------------------------
