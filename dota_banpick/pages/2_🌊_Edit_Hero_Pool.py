@@ -122,6 +122,9 @@ image_width = 6
 if __name__ == "__main__":
 
     # default
+    st.set_page_config(
+        layout="centered"
+    )
     
     st.session_state.data_ready_count = 0
 

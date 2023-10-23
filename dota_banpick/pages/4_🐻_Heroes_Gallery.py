@@ -23,6 +23,9 @@ def show_item_component(img, name):
 
 
 if __name__ == "__main__":
+    st.set_page_config(
+        layout="centered"
+    )
 
     @st.cache_resource
     def loading_page():

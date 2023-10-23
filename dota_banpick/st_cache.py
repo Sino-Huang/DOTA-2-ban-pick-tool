@@ -162,8 +162,9 @@ def load_default_hero_pools():
     return default_hero_pools  # structure [[hero_name]]
 
 
-@st.cache_resource
-def load_cached_name_hero_pool_dict():
-    singleton_manager = Manager()
-    cache_dict = singleton_manager.dict()
-    return cache_dict
+def load_cached_name_hero_pool_dict(): # no more cache because we want different users to use
+    # singleton_manager = Manager()
+    # cache_dict = singleton_manager.dict()
+    if "singleton_cache_dict" not in st.session_state:
+        st.session_state.singleton_cache_dict = dict()
+    return st.session_state.singleton_cache_dict
