@@ -1,6 +1,6 @@
 # DOTA 2 ban pick tool 
 > [!WARNING]
-> App not setup: This app is still in development mode 
+> The app is in alpha version, which doesn't always have the full features implemented. 
 
 ## Quickstart
 1. you shall have a python 3.10 environment 
