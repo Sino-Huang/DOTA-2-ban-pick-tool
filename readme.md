@@ -6,7 +6,7 @@
 1. you shall have a python 3.10 environment 
    - if you have anaconda, then simply setup a conda env by run `conda create -y --name dota python=3.10 && conda activate dota`
    - Otherwise, go to [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/miniconda-install.html) to download python environment
-2. to install the app, open a terminal with python environment, run `pip install "https://github.com/Sino-Huang/DOTA-2-ban-pick-tool/archive/refs/tags/v0.5.1.zip" --force-reinstall`
+2. to install the app, open a terminal with python environment, run `pip install "https://github.com/Sino-Huang/DOTA-2-ban-pick-tool/archive/refs/tags/v0.5.1.1.zip" --force-reinstall`
 3. after install the python package, simply run `dota-banpick` in your terminal to start the app!
 
 <!-- - Sorry, no installation guide yet because it is still under-developing -->
