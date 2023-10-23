@@ -9,7 +9,7 @@ from multiprocessing import Manager
 import copy
 import pandas as pd
 import pickle
-from dota_banpick.config import DEPTH_LIMIT
+from dota_banpick.config import DEPTH_LIMIT, LAST_UPDATE
 from dota_banpick.st_cache import pos_description, get_hero_csv_data_filtered, get_image_data, get_pos_1_hero_list, get_pos_2_hero_list, get_pos_3_hero_list, get_pos_4_hero_list, get_pos_5_hero_list, get_position_colour_tags, get_position_default_imgspath, init_warmup_cache_dict
 from streamlit_option_menu import option_menu
 from streamlit_card import card
@@ -66,7 +66,7 @@ p {
         st.session_state["show_pos_hero_ind"] = -1
 
     st.title("DOTA2 BanPick Tool")
-    st.warning("Last Update: 21 Oct 2023")
+    st.warning(f"Last Update: {LAST_UPDATE}")
     card("Start Editing Your Hero Pool", text=("Provide your usual positions → Edit your hero pool → Begin to banpick"),
          url="/Edit_Hero_Pool", on_click=lambda: None,
          image="https://clan.cloudflare.steamstatic.com/images//3703047/4ff438f53339fe12849e788e3902b319d2b0828c.jpg",

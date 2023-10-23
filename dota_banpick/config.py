@@ -49,6 +49,7 @@ lane_rate_dict_fp = os.path.join(
 with open(lane_rate_dict_fp, 'rb') as f:
     lane_rate_info_dict = pickle.load(f)
 
+LAST_UPDATE = "21 Oct 2023"
 
 COUNTER_WEIGHT = 1.2 # increase if we want to focus more on countering the opponents rather than hero combo
                      # try 0.1 interval 
