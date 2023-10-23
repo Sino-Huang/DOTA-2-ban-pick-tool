@@ -152,7 +152,7 @@ def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict):
 
         counter_pos_hero_combos = [(x, y) for x in default_hero_pools[counter_poses[0] - 1]
                                    for y in default_hero_pools[counter_poses[1] - 1] if x != y]
-        for our_combo, _ in tqdm(suggested_hero_list, desc=f"for pos {str_pick_choice}"):
+        for our_combo, _ in suggested_hero_list:
             counter_max_score = -999
             counter_max_ind = -999
             for oppo_ind, oppo_combo in enumerate(counter_pos_hero_combos):

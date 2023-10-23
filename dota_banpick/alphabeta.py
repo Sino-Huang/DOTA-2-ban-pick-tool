@@ -28,6 +28,7 @@ from multiprocessing import Pool, Process, Manager, Lock
 import threading
 import queue
 from multiprocessing.pool import ThreadPool
+import multiprocessing as mps
 
 
 # this file implements the alpha beta pruning method
@@ -161,20 +162,19 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                 mapargs = [(next_node, local_node_ind, depth, alpha_m, beta, depth_limit, cache_dict,
                             suggested_hero_list, next_node_values_list,
                             pick_choice_combo_dict, str_pick_choice, break_flag_list, activate_saving_cache) for local_node_ind, next_node in enumerate(next_node_lst)]
-
-                try:
-                    workers_num = 16
-                    process_map(support_process_map_func, mapargs,
-                                max_workers=workers_num, chunksize=40, leave=False)
-                except ABCutOffException:
-                    pass
+                workers_num = 7
+                # try:
+                #     process_map(support_process_map_func, mapargs,
+                #                 max_workers=workers_num, chunksize=40, leave=False)
+                # except ABCutOffException:
+                #     pass
                 
-                # with Pool(16) as pool:
-                #     try:
-                #         pool.map(support_process_map_func, mapargs,
-                #                     chunksize=20)
-                #     except ABCutOffException:
-                #         pass
+                with Pool(workers_num) as pool:
+                    try:
+                        pool.map(support_process_map_func, mapargs,
+                                    chunksize=40)
+                    except ABCutOffException:
+                        pass
 
                 max_next_node_value = max(next_node_values_list)
                 value = max(value, max_next_node_value)
@@ -303,7 +303,7 @@ if __name__ == "__main__":
         format='%(levelname)s:%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.WARNING)
     
     depth_limit = 1
-
+    mps.set_start_method("spawn") # test speed for windows
 
     record_folder = os.path.join(os.path.dirname(__file__), "data/records")
     hero_pool_fps = glob(os.path.join(
@@ -367,11 +367,12 @@ if __name__ == "__main__":
     print(f"A Cache size {len(alpha_beta_cache_dict)}")
 
     # print("without cache dict")
+
     start_time = time.time()
     value, suggested_hero_pick_dict = alphabeta(
         start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict)
     
-    print(suggested_hero_pick_dict)
+    # print(suggested_hero_pick_dict)
     end_time = time.time()
     elapsed_time = end_time - start_time  # in second
     print("Elapsed time in seconds: ", elapsed_time)
@@ -388,7 +389,7 @@ if __name__ == "__main__":
     value, suggested_hero_pick_dict = alphabeta(
         start_node, 0, -999, 999, True, depth_limit, None)
     
-    print(suggested_hero_pick_dict)
+    # print(suggested_hero_pick_dict)
     end_time = time.time()
     elapsed_time = end_time - start_time  # in second
     print("Elapsed time in seconds: ", elapsed_time)        
