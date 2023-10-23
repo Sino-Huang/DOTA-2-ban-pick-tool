@@ -345,9 +345,7 @@ if __name__ == "__main__":
             st.session_state['name_abbrev_dict'].keys())
 
     ready_to_bp = False
-    if not ready_to_bp:
-        st.title("Refresh (F5) the page if you want to BP your next game!")
-
+    st.title("Refresh (F5) the page if you want to BP your next game!")
     player_cache_dict = load_cached_name_hero_pool_dict()
     alpha_beta_cache_dict = init_warmup_cache_dict()
 
@@ -378,8 +376,6 @@ if __name__ == "__main__":
 
     # ---------------Table Placeholder -------------------
     if "suggest_header_placeholder" in st.session_state:
-        st.write(len(st.session_state.the_bp_node.ally_hero_pools))
-
         st.subheader(st.session_state.suggest_header_placeholder)
         st.info(st.session_state.info_placeholder)
         with st.container():
