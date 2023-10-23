@@ -120,9 +120,6 @@ def file_upload_onchange():
 image_width = 6
 
 if __name__ == "__main__":
-    st.set_page_config(
-        layout="centered"
-    )
 
     # default
     

@@ -344,9 +344,6 @@ def ready_to_bp_on_click():
 
 
 if __name__ == "__main__":
-    st.set_page_config(
-        layout="wide"
-    )
 
     st.markdown("""
     <style>
