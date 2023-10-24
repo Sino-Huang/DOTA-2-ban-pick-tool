@@ -97,6 +97,7 @@ class StateNode:
         # dynamic ban list
         # ban list also contains the picked up heros (so it is more suitable to call it unavailabe hero list)
         self.ban_lst = set()
+        self.ban_lst.add(None)
         # -- end dynamic var --
 
     def __copy__(self):
