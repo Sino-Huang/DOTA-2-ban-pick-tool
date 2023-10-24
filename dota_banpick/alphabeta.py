@@ -163,18 +163,18 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                             suggested_hero_list, next_node_values_list,
                             pick_choice_combo_dict, str_pick_choice, break_flag_list, activate_saving_cache) for local_node_ind, next_node in enumerate(next_node_lst)]
                 workers_num = 7
-                # try:
-                #     process_map(support_process_map_func, mapargs,
-                #                 max_workers=workers_num, chunksize=40, leave=False)
-                # except ABCutOffException:
-                #     pass
+                try:
+                    process_map(support_process_map_func, mapargs,
+                                max_workers=workers_num, chunksize=40, leave=False)
+                except ABCutOffException:
+                    pass
                 
-                with Pool(workers_num) as pool:
-                    try:
-                        pool.map(support_process_map_func, mapargs,
-                                    chunksize=40)
-                    except ABCutOffException:
-                        pass
+                # with Pool(workers_num) as pool:
+                #     try:
+                #         pool.map(support_process_map_func, mapargs,
+                #                     chunksize=40)
+                #     except ABCutOffException:
+                #         pass
 
                 max_next_node_value = max(next_node_values_list)
                 value = max(value, max_next_node_value)
@@ -200,12 +200,18 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                 mapargs = [(next_node, local_node_ind, depth, alpha_queue, beta, depth_limit, cache_dict,
                             suggested_hero_list, next_node_values_list,
                             pick_choice_combo_dict, str_pick_choice, break_flag_list, activate_saving_cache) for local_node_ind, next_node in enumerate(next_node_lst)]
-                with ThreadPool(2) as pool:
-                    try:
-                        pool.map(support_thread_map_func_maximize, mapargs,
-                                 chunksize=20)
-                    except ABCutOffException:
-                        pass
+                # with ThreadPool(2) as pool:
+                #     try:
+                #         pool.map(support_thread_map_func_maximize, mapargs,
+                #                  chunksize=20)
+                #     except ABCutOffException:
+                #         pass
+                    
+                try:
+                    thread_map(support_thread_map_func_maximize, mapargs,
+                                max_workers=2, chunksize=int(len(mapargs) / 2), leave=False)
+                except ABCutOffException:
+                    pass
                     
                 max_next_node_value = max(next_node_values_list)
                 value = max(value, max_next_node_value)
@@ -273,12 +279,18 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                         next_node_values_list,
                         break_flag_list, activate_saving_cache) for next_node in next_node_lst]
 
-            with ThreadPool(2) as pool:
-                try:
-                    pool.map(support_thread_map_func_minimize, mapargs,
-                             chunksize=int(len(mapargs) / 2))
-                except ABCutOffException:
-                    pass
+            # with ThreadPool(2) as pool:
+            #     try:
+            #         pool.map(support_thread_map_func_minimize, mapargs,
+            #                  chunksize=int(len(mapargs) / 2))
+            #     except ABCutOffException:
+            #         pass
+                
+            try:
+                thread_map(support_thread_map_func_minimize, mapargs,
+                            max_workers=2, chunksize=int(len(mapargs) / 2), leave=False)
+            except ABCutOffException:
+                pass
             min_next_node_value = min(next_node_values_list)
             value = min(value, min_next_node_value)
 
@@ -363,31 +375,35 @@ if __name__ == "__main__":
     # start_node = StateNode(*ally_hero_pools, *opponent_hero_pools)
     # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5).ban_hero("Anti-Mage")
 
-    print("With cache")
-    print(f"A Cache size {len(alpha_beta_cache_dict)}")
+    # print("With cache")
+    # print(f"A Cache size {len(alpha_beta_cache_dict)}")
 
-    # print("without cache dict")
+    # # print("without cache dict")
 
+    # start_time = time.time()
+    # value, suggested_hero_pick_dict = alphabeta(
+    #     start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict)
+    
+    # # print(suggested_hero_pick_dict)
+    # end_time = time.time()
+    # elapsed_time = end_time - start_time  # in second
+    # print("Elapsed time in seconds: ", elapsed_time)
+    
+    
+    # print("Round 3")
+    
+    # # round 3
+    # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
+    #     .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)
+    
+    # round 1 conflict situation
+    start_node = StateNode(*ally_hero_pools, *opponent_hero_pools)
+    start_node.add_hero("Abaddon", True, 5)
+    
     start_time = time.time()
     value, suggested_hero_pick_dict = alphabeta(
-        start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict)
-    
-    # print(suggested_hero_pick_dict)
-    end_time = time.time()
-    elapsed_time = end_time - start_time  # in second
-    print("Elapsed time in seconds: ", elapsed_time)
-    
+        start_node, 0, -999, 999, True, 0, alpha_beta_cache_dict)
     prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict)
-    
-    print("Round 3")
-    
-    # round 3
-    start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
-        .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)
-    
-    start_time = time.time()
-    value, suggested_hero_pick_dict = alphabeta(
-        start_node, 0, -999, 999, True, depth_limit, None)
     
     # print(suggested_hero_pick_dict)
     end_time = time.time()

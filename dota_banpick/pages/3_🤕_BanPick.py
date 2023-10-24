@@ -51,22 +51,24 @@ def get_online_image_urls(heronames):
     return lst
 
 
-def get_diverse_suggest_lst(sugest_lst, limit):
+def get_diverse_suggest_lst(sugest_lst, limit, occur_num = 2):
     output_list = []
     occur_list = []
-    for comb in sugest_lst:
+    outputinds = [] 
+    for ind, comb in enumerate(sugest_lst):
         dontuse_flag = False
         for h in comb:
-            if occur_list.count(h) >= 2:
+            if occur_list.count(h) >= occur_num:
                 dontuse_flag = True
                 break
         if not dontuse_flag:
             output_list.append(comb)
+            outputinds.append(ind)
             for h in comb:
                 occur_list.append(h)
         if len(output_list) >= limit:
             break
-    return output_list
+    return output_list, outputinds
 
 
 def inp_on_change(bpinput_key, name):
@@ -182,7 +184,7 @@ def update_ban_hero_multiselect():
         if "Preparation Drafting" in st.session_state.suggest_header_placeholder:
             with st.spinner("AI Searching..."):
                 val, prepara_phase_suggested_pick_dict = alphabeta(
-                    st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict)
+                    st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict, True)
             prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
                 prepara_phase_suggested_pick_dict)
 
@@ -197,11 +199,11 @@ def update_ban_hero_multiselect():
 
                 pick_list = [
                     x for x, _ in prepara_phase_suggested_pick_dict[comboname]]
-                pick_list = get_diverse_suggest_lst(pick_list, suggest_num)
+                pick_list, pick_list_inds = get_diverse_suggest_lst(pick_list, suggest_num)
 
                 ban_list = [
                     x for x in prepare_phase_suggested_ban_dict[comboname]]
-                ban_list = get_diverse_suggest_lst(ban_list, suggest_num)
+                ban_list = [ban_list[x] for x in pick_list_inds]
                 pick_ban_table = form_pick_ban_table(
                     pick_list, ban_list, comboname)
                 st.session_state[f"suggest_ban_table_col_{ind}_table"] = pick_ban_table
@@ -215,7 +217,7 @@ def update_ban_hero_multiselect():
         else:
             with st.spinner("AI Searching..."):
                 val, prepara_phase_suggested_pick_dict = alphabeta(
-                    st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, None)
+                    st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict, True)
 
             for ind, comboname in enumerate(prepara_phase_suggested_pick_dict):
                 impacted_player_lst = get_impacted_player_from_choice(
@@ -228,7 +230,7 @@ def update_ban_hero_multiselect():
 
                 pick_list = [
                     x for x, _ in prepara_phase_suggested_pick_dict[comboname]]
-                pick_list = get_diverse_suggest_lst(pick_list, suggest_num)
+                pick_list, _ = get_diverse_suggest_lst(pick_list, suggest_num)
 
                 pick_avoid_table = form_pick_avoid_table(
                     pick_list, comboname)
@@ -261,7 +263,7 @@ def update_pick_hero_oppo_multiselect():
             if nonecount_before != nonecount:
                 with st.spinner("AI Searching..."):
                     val, prepara_phase_suggested_pick_dict = alphabeta(
-                        st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, None)
+                        st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict, True)
 
                 output_dict = compute_bad_picks_for_each_pos(
                     st.session_state.the_bp_node, suggest_num)
@@ -278,7 +280,7 @@ def update_pick_hero_oppo_multiselect():
 
                     pick_list = [
                         x for x, _ in prepara_phase_suggested_pick_dict[comboname]]
-                    pick_list = get_diverse_suggest_lst(pick_list, suggest_num)
+                    pick_list, _ = get_diverse_suggest_lst(pick_list, suggest_num)
 
                     pick_sugg_table = form_pick_avoid_table(
                         pick_list, comboname)
@@ -298,6 +300,44 @@ def ally_pick_select(select_key, ally_ind):
         "Add ally heroes first, and then opponent heroes.")
     st.session_state.the_bp_node.add_hero(
         selectedhero, True, ally_ind+1)
+    
+    if st.session_state.the_bp_node.ally_heros.count(None) in [4, 2]:
+        st.write(st.session_state.the_bp_node)
+        val, prepara_phase_suggested_pick_dict = alphabeta(
+            st.session_state.the_bp_node, 0, -999, 999, True, 0, None)
+        prepare_phase_suggested_ban_dict = None 
+        if st.session_state.the_bp_node.ally_heros.count(None) == 4 and ally_ind in [2,3,4]:   
+            prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
+                prepara_phase_suggested_pick_dict)
+
+        for ind, comboname in enumerate(prepara_phase_suggested_pick_dict):
+            impacted_player_lst = get_impacted_player_from_choice(
+                comboname)
+            if len(impacted_player_lst) > 0:
+                st.session_state[
+                    f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname} for {' and '.join(impacted_player_lst)}"
+            else:
+                st.session_state[f"suggest_ban_table_col_{ind}_table_header"] = f"Pos Combo {comboname}"
+
+            pick_list = [
+                x for x, _ in prepara_phase_suggested_pick_dict[comboname]]
+            pick_list, pick_list_inds = get_diverse_suggest_lst(pick_list, suggest_num, suggest_num)
+            if prepare_phase_suggested_ban_dict is not None:
+                ban_list = [
+                    x for x in prepare_phase_suggested_ban_dict[comboname]]
+                ban_list = [ban_list[x] for x in pick_list_inds]
+                pick_ban_table = form_pick_ban_table(
+                    pick_list, ban_list, comboname)
+            else:
+                pick_ban_table = form_pick_avoid_table(
+                    pick_list, comboname)
+            st.session_state[f"suggest_ban_table_col_{ind}_table"] = pick_ban_table
+        # remove further table
+        while f"suggest_ban_table_col_{ind+1}_table" in st.session_state:
+            del st.session_state[f"suggest_ban_table_col_{ind+1}_table"]
+            del st.session_state[f"suggest_ban_table_col_{ind+1}_table_header"]
+            ind += 1
+
 
 def ready_to_bp_on_click():
     # ------  preparation phase suggestion ------
@@ -330,7 +370,7 @@ def ready_to_bp_on_click():
                                          " This guidance stems from our assessment that Positions 1 and 2 should avoid early picks to reduce the risk of easy counters.")
     with st.spinner("AI Searching..."):
         val, prepara_phase_suggested_pick_dict = alphabeta(
-            st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict)
+            st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict, True)
     prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
         prepara_phase_suggested_pick_dict)
 
@@ -345,10 +385,11 @@ def ready_to_bp_on_click():
 
         pick_list = [
             x for x, _ in prepara_phase_suggested_pick_dict[comboname]]
-        pick_list = get_diverse_suggest_lst(pick_list, suggest_num)
+        pick_list, pick_list_inds = get_diverse_suggest_lst(pick_list, suggest_num)
+
         ban_list = [
-            x for x in prepare_phase_suggested_ban_dict[comboname]]
-        ban_list = get_diverse_suggest_lst(ban_list, suggest_num)
+                    x for x in prepare_phase_suggested_ban_dict[comboname]]
+        ban_list = [ban_list[x] for x in pick_list_inds]
         pick_ban_table = form_pick_ban_table(
             pick_list, ban_list, comboname)
         st.session_state[f"suggest_ban_table_col_{ind}_table"] = pick_ban_table
