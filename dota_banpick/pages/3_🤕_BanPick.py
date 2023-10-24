@@ -310,7 +310,8 @@ def ready_to_bp_on_click():
         else:
             st.session_state.ally_name_list.append(
                 " ".join(posname.split(" ")[:2]))
-
+    if 'bad_picks_for_each_pos' in st.session_state:
+        del st.session_state.bad_picks_for_each_pos 
     st.session_state.all_hero_list = get_heros()
     st.session_state.the_bp_node = StateNode(
         *st.session_state["ally_hero_pools"], *st.session_state["opponent_hero_pools"])
