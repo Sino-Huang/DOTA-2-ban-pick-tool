@@ -299,7 +299,6 @@ def ally_pick_select(select_key, ally_ind):
     st.session_state.the_bp_node.add_hero(
         selectedhero, True, ally_ind+1)
 
-
 def ready_to_bp_on_click():
     # ------  preparation phase suggestion ------
     st.session_state.ally_name_list = []
