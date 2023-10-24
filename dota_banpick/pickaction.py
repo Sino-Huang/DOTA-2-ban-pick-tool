@@ -97,7 +97,6 @@ class StateNode:
         # dynamic ban list
         # ban list also contains the picked up heros (so it is more suitable to call it unavailabe hero list)
         self.ban_lst = set()
-        self.ban_lst.add(None)
         # -- end dynamic var --
 
     def __copy__(self):
@@ -164,6 +163,8 @@ class StateNode:
             hero_name (_type_): _description_
             position: the natural dota position 1 - 5
         """
+        if hero_name is None:
+            return
         auto_guess_flag = False
         position_index = 1
         if is_ally:

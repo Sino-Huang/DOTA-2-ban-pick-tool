@@ -17,6 +17,9 @@ Go to https://www.banpick.win/ to try our app!
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/huangsukaig)
 
+### How to use demo 
+Go to [Youtube Video Demo](https://youtu.be/krG0LuIItCw) to know how to use the tool.
+
 ## Purpose 
 - User friendly and newbee friendly DOTA 2 ban pick tool. 
 - Help you and your friends to drafting 
@@ -81,3 +84,18 @@ Go to https://www.banpick.win/ to try our app!
 ## Promise
 - The banpick app will be updated to suit new patches as long as the authors still play DOTA 2 
 
+## Legitimacy and Fair Play
+1. No Cheating Involved:
+  - Our tool is fundamentally different from real-time game-enhancing applications like Overwolf. It does not interact with the DOTA 2 game client or servers during gameplay nor does it parse player information in real-time.
+
+2. Purely a Drafting Aid:
+  - This tool is designed to serve as a drafting practice tool. Its sole purpose is to assist players in understanding and strategizing around the drafting phase of the game. It simulates various drafting scenarios to help players make informed decisions on hero selections and bans based on predefined metrics and algorithms.
+
+3. No Real-Time Assistance:
+  - The DOTA 2 Ban Pick Tool does not provide any real-time assistance, insights, or advantages during actual gameplay. It operates exclusively outside the game environment, thus preserving the game's competitive integrity.
+
+4. No Data Parsing:
+  - Unlike some other tools, our application does not parse or analyze player data during game runtime. It strictly operates based on predefined hero pools and user inputs prior to engaging in a game.
+
+5. Privacy Respected:
+  - We highly respect user privacy and game ethics. No personal or game data is accessed, collected, or shared through the use of this tool.
