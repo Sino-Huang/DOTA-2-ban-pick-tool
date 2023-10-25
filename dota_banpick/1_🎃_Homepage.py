@@ -10,7 +10,7 @@ import copy
 import pandas as pd
 import pickle
 from dota_banpick.config import DEPTH_LIMIT, LAST_UPDATE
-from dota_banpick.st_cache import pos_description, get_hero_csv_data_filtered, get_image_data, get_pos_1_hero_list, get_pos_2_hero_list, get_pos_3_hero_list, get_pos_4_hero_list, get_pos_5_hero_list, get_position_colour_tags, get_position_default_imgspath, init_warmup_cache_dict
+from dota_banpick.st_cache import pos_description, get_hero_csv_data_filtered, get_image_data, get_pos_1_hero_list, get_pos_2_hero_list, get_pos_3_hero_list, get_pos_4_hero_list, get_pos_5_hero_list, get_position_colour_tags, get_position_default_imgspath
 from streamlit_option_menu import option_menu
 from streamlit_card import card
 from annotated_text import annotated_text
@@ -54,7 +54,6 @@ p {
 </style>
 """, unsafe_allow_html=True)
 
-    _ = init_warmup_cache_dict()
 
     if "posoption_menu" not in st.session_state:
         st.session_state["posoption_menu"] = pos_description[0]

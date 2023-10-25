@@ -15,16 +15,17 @@ from glob import glob
 import logging
 import os
 import pickle
+import sys
 import time
 
 from natsort import natsorted
-from config import ACTIVATE_SAVING_CACHE, DEPTH_LIMIT, PRUNE_WORST_HERO_NUM, SUGGESTION_NUM, versus_winrate_matrix, with_winrate_matrix, counter_rate_matrix
-from pickaction import StateNode
-from heuristic import calculate_heuristic, compute_associated_ban_suggestion_first_round
+from dota_banpick.config import default_hero_pools, ACTIVATE_SAVING_CACHE, DEPTH_LIMIT, PRUNE_WORST_HERO_NUM, SUGGESTION_NUM, versus_winrate_matrix, with_winrate_matrix, counter_rate_matrix
+from dota_banpick.pickaction import StateNode
+from dota_banpick.heuristic import calculate_heuristic, compute_associated_ban_suggestion_first_round
 from tqdm.auto import tqdm
 from multiprocessing import Manager, Pool
+from multiprocessing import Pool, Process, Lock
 from tqdm.contrib.concurrent import process_map, thread_map
-from multiprocessing import Pool, Process, Manager, Lock
 import threading
 import queue
 from multiprocessing.pool import ThreadPool
@@ -45,7 +46,7 @@ def support_thread_map_func_minimize(args):
     next_node, depth, alpha, beta_queue, depth_limit, cache_dict, next_node_values_list, break_flag_list, activate_saving_cache = args
     beta = beta_queue.get()
     next_node_value, _ = alphabeta(
-        next_node, depth + 1, alpha, beta, True, depth_limit, cache_dict, activate_saving_cache)
+        next_node, depth + 1, alpha, beta, True, depth_limit, activate_saving_cache, cache_dict)
     next_node_values_list.append(next_node_value)
 
     if next_node_value < alpha:
@@ -60,7 +61,7 @@ def support_thread_map_func_maximize(args):
     next_node, local_node_ind, depth, alpha_queue, beta, depth_limit, cache_dict, suggested_hero_list, next_node_values_list, pick_choice_combo_dict, str_pick_choice, break_flag_list, activate_saving_cache = args
     alpha = alpha_queue.get()
     next_node_value, _ = alphabeta(
-        next_node, depth + 1, alpha, beta, False, depth_limit, cache_dict, activate_saving_cache)
+        next_node, depth + 1, alpha, beta, False, depth_limit, activate_saving_cache, cache_dict)
     next_node_values_list.append(next_node_value)
     suggested_hero_list.append(
         (pick_choice_combo_dict[str_pick_choice][local_node_ind], next_node_value))
@@ -77,7 +78,7 @@ def support_process_map_func(args):
     # ! need manager
     next_node, local_node_ind, depth, alpha_m, beta, depth_limit, cache_dict, suggested_hero_list, next_node_values_list, pick_choice_combo_dict, str_pick_choice, break_flag_list, activate_saving_cache = args
     next_node_value, _ = alphabeta(
-        next_node, depth + 1, alpha_m.value, beta, False, depth_limit, cache_dict, activate_saving_cache)
+        next_node, depth + 1, alpha_m.value, beta, False, depth_limit, activate_saving_cache, cache_dict)
     next_node_values_list.append(next_node_value)
     suggested_hero_list.append(
         (pick_choice_combo_dict[str_pick_choice][local_node_ind], next_node_value))
@@ -89,43 +90,47 @@ def support_process_map_func(args):
     alpha_m.value = max(alpha_m.value, next_node_value)
 
 
-def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_limit, cache_dict = None, activate_saving_cache=ACTIVATE_SAVING_CACHE):
+def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_limit, activate_saving_cache=ACTIVATE_SAVING_CACHE, cache_dict=None):
+    if not activate_saving_cache:
+        cache_dict = None 
     # if node.cur_round != 0 do not use the warmup dict because we have ban heros and it will affect score
-    if cache_dict is not None and node.cur_round == 0 and str(node) in cache_dict:
-        if node.cur_round == 0 and depth == 0 and len(node.ban_lst) > 0:
-            # ! consider ban hero counter if cur round = 0
-            # suggested_hero_list structure = [[(hero_1, hero_2), val]]
-            value, suggested_hero_pick_dict = cache_dict[str(node)]
-            for str_pick_choice in suggested_hero_pick_dict:
-                suggested_hero_list = suggested_hero_pick_dict[str_pick_choice]
-                updated_suggested_hero_list = []
-                for s_h_l_ind in range(len(suggested_hero_list)):
-                    hero_combo, val = suggested_hero_list[s_h_l_ind]
-                    h1, h2 = hero_combo
-                    if h1 in node.ban_lst or h2 in node.ban_lst:
-                        continue
-                    countered_most_hero_list = set()
-                    for ban_hero in node.ban_lst:
-                        # get counter most top PRUNE_WORST_HERO_NUM
-                        for tind, ct_hero in enumerate(counter_rate_matrix[ban_hero].keys()):
-                            if tind < PRUNE_WORST_HERO_NUM:
-                                countered_most_hero_list.add(ct_hero)
-                            else:
-                                break
-                    for hero in hero_combo:
-                        if hero in countered_most_hero_list:
-                            val += 0.03
+    if cache_dict is not None and str(node) in cache_dict:
+        return cache_dict[str(node)]
+    
+    if node.cur_round == 0 and depth == 0 and len(node.ban_lst) > 0:
+        # ! consider ban hero counter if cur round = 0
+        # suggested_hero_list structure = [[(hero_1, hero_2), val]]
+        pure_node = node.__copy__()
+        pure_node.ban_lst.clear()
+        value, suggested_hero_pick_dict = cache_dict[str(pure_node)]
+        for str_pick_choice in suggested_hero_pick_dict:
+            suggested_hero_list = suggested_hero_pick_dict[str_pick_choice]
+            updated_suggested_hero_list = []
+            for s_h_l_ind in range(len(suggested_hero_list)):
+                hero_combo, val = suggested_hero_list[s_h_l_ind]
+                h1, h2 = hero_combo
+                if h1 in node.ban_lst or h2 in node.ban_lst:
+                    continue
+                countered_most_hero_list = set()
+                for ban_hero in node.ban_lst:
+                    # get counter most top PRUNE_WORST_HERO_NUM
+                    for tind, ct_hero in enumerate(counter_rate_matrix[ban_hero].keys()):
+                        if tind < PRUNE_WORST_HERO_NUM:
+                            countered_most_hero_list.add(ct_hero)
+                        else:
+                            break
+                for hero in hero_combo:
+                    if hero in countered_most_hero_list:
+                        val += 0.03
+                
                     
-                        
-                    updated_suggested_hero_list.append([hero_combo, val])
-                # sort it again
-                updated_suggested_hero_list = sorted(
-                    updated_suggested_hero_list, key=lambda x: x[1], reverse=True)
-                suggested_hero_pick_dict[str_pick_choice] = updated_suggested_hero_list
-            return value, suggested_hero_pick_dict
-            # ! -----------------------
-        else:
-            return cache_dict[str(node)]
+                updated_suggested_hero_list.append([hero_combo, val])
+            # sort it again
+            updated_suggested_hero_list = sorted(
+                updated_suggested_hero_list, key=lambda x: x[1], reverse=True)
+            suggested_hero_pick_dict[str_pick_choice] = updated_suggested_hero_list
+        return value, suggested_hero_pick_dict
+        # ! -----------------------
 
     if depth > depth_limit or node.is_terminated():
         value = calculate_heuristic(
@@ -162,18 +167,18 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                             suggested_hero_list, next_node_values_list,
                             pick_choice_combo_dict, str_pick_choice, break_flag_list, activate_saving_cache) for local_node_ind, next_node in enumerate(next_node_lst)]
                 workers_num = 7
-                try:
-                    process_map(support_process_map_func, mapargs,
-                                max_workers=workers_num, chunksize=40, leave=False)
-                except ABCutOffException:
-                    pass
+                # try:
+                #     process_map(support_process_map_func, mapargs,
+                #                 max_workers=workers_num, chunksize=40, leave=False)
+                # except ABCutOffException:
+                #     pass
                 
-                # with Pool(workers_num) as pool:
-                #     try:
-                #         pool.map(support_process_map_func, mapargs,
-                #                     chunksize=40)
-                #     except ABCutOffException:
-                #         pass
+                with Pool(workers_num) as pool:
+                    try:
+                        pool.map(support_process_map_func, mapargs,
+                                    chunksize=40)
+                    except ABCutOffException:
+                        pass
 
                 max_next_node_value = max(next_node_values_list)
                 value = max(value, max_next_node_value)
@@ -199,18 +204,18 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                 mapargs = [(next_node, local_node_ind, depth, alpha_queue, beta, depth_limit, cache_dict,
                             suggested_hero_list, next_node_values_list,
                             pick_choice_combo_dict, str_pick_choice, break_flag_list, activate_saving_cache) for local_node_ind, next_node in enumerate(next_node_lst)]
-                # with ThreadPool(2) as pool:
-                #     try:
-                #         pool.map(support_thread_map_func_maximize, mapargs,
-                #                  chunksize=20)
-                #     except ABCutOffException:
-                #         pass
+                with ThreadPool(2) as pool:
+                    try:
+                        pool.map(support_thread_map_func_maximize, mapargs,
+                                 chunksize=20)
+                    except ABCutOffException:
+                        pass
                     
-                try:
-                    thread_map(support_thread_map_func_maximize, mapargs,
-                                max_workers=2, chunksize=int(len(mapargs) / 2), leave=False)
-                except ABCutOffException:
-                    pass
+                # try:
+                #     thread_map(support_thread_map_func_maximize, mapargs,
+                #                 max_workers=2, chunksize=int(len(mapargs) / 2), leave=False)
+                # except ABCutOffException:
+                #     pass
                     
                 max_next_node_value = max(next_node_values_list)
                 value = max(value, max_next_node_value)
@@ -246,7 +251,7 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
             suggested_hero_pick_dict[str_pick_choice] = suggested_hero_list
             if break_flag:
                 break
-        if cache_dict is not None and activate_saving_cache:
+        if cache_dict is not None and activate_saving_cache and depth == 0:
             cache_dict[str(node)] = (value, suggested_hero_pick_dict)
 
         return value, suggested_hero_pick_dict
@@ -278,18 +283,18 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                         next_node_values_list,
                         break_flag_list, activate_saving_cache) for next_node in next_node_lst]
 
-            # with ThreadPool(2) as pool:
-            #     try:
-            #         pool.map(support_thread_map_func_minimize, mapargs,
-            #                  chunksize=int(len(mapargs) / 2))
-            #     except ABCutOffException:
-            #         pass
+            with ThreadPool(2) as pool:
+                try:
+                    pool.map(support_thread_map_func_minimize, mapargs,
+                             chunksize=int(len(mapargs) / 2))
+                except ABCutOffException:
+                    pass
                 
-            try:
-                thread_map(support_thread_map_func_minimize, mapargs,
-                            max_workers=2, chunksize=int(len(mapargs) / 2), leave=False)
-            except ABCutOffException:
-                pass
+            # try:
+            #     thread_map(support_thread_map_func_minimize, mapargs,
+            #                 max_workers=2, chunksize=int(len(mapargs) / 2), leave=False)
+            # except ABCutOffException:
+            #     pass
             min_next_node_value = min(next_node_values_list)
             value = min(value, min_next_node_value)
 
@@ -309,131 +314,42 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
 
 
 if __name__ == "__main__":
-    # debug
-    logging.basicConfig(
-        format='%(levelname)s:%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.WARNING)
     
-    depth_limit = 1
-    mps.set_start_method("spawn") # test speed for windows
-
     record_folder = os.path.join(os.path.dirname(__file__), "data/records")
-    hero_pool_fps = glob(os.path.join(
-        record_folder, "default_pos_*_hero_pool.txt"))
-    hero_pool_fps = natsorted(hero_pool_fps)
-    ally_hero_pools = []
-    opponent_hero_pools = []
-    for hp_fp in hero_pool_fps:
-        with open(hp_fp, 'r') as f:
-            hp_text = f.read()
-            ally_hero_pools.append(eval(hp_text))
-            opponent_hero_pools.append(eval(hp_text))
-
-    start_node = StateNode(*ally_hero_pools, *opponent_hero_pools)
-    manager = Manager()
-
-    versus_winrate_matrix_fp = os.path.join(
-        record_folder, "versus_winrate_matrix.pkl")
-    with_winrate_matrix_fp = os.path.join(
-        record_folder, "with_winrate_matrix.pkl")
-    counter_rate_matrix_fp = os.path.join(
-        record_folder, "counter_rate_matrix.pkl")
-
     warmup_cache_dict_fp = os.path.join(
-        record_folder, f"depth_limit_{depth_limit}_warmup_cache_dict.pkl")
-
-    with open(versus_winrate_matrix_fp, 'rb') as f:
-        versus_winrate_matrix = pickle.load(f)
-
-    with open(with_winrate_matrix_fp, 'rb') as f:
-        with_winrate_matrix = pickle.load(f)
-
-    with open(counter_rate_matrix_fp, 'rb') as f:
-        counter_rate_matrix = pickle.load(f)
-
+        record_folder, f"depth_limit_{1}_warmup_cache_dict.pkl")
+    # load dict    
+    cache_dict_manager = Manager()
     with open(warmup_cache_dict_fp, 'rb') as f:
         warmup_cache_dict = pickle.load(f)
-    alpha_beta_cache_dict = manager.dict(warmup_cache_dict)
+    alpha_beta_cache_dict = cache_dict_manager.dict(warmup_cache_dict)
     
+    # debug level
+    logging.basicConfig(
+        format='%(levelname)s:%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.ERROR)
+
+    if sys.platform == "linux" or sys.platform == "darwin":
+        mps.set_start_method("fork", force=True)
     
-    # round 5
-    # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
-    #     .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)\
-    #     .add_hero("Arc Warden", True, 3).add_hero("Bristleback", True, 4)\
-    #     .add_hero("Tiny", False, 3).add_hero("Axe", False, 4)
-
-    # # round 3
-    # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
-    #     .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)
-        
-    # # round 3 conflict situation
-    # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
-    #     .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)\
-    #     .add_hero("Arc Warden", True, 3).add_hero("Bristleback", True, 4).ban_hero("Bristleback")
-
-    # # round 1 conflict situation
-    # start_node = StateNode(*ally_hero_pools, *opponent_hero_pools)
-    # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5).ban_hero("Anti-Mage")
-
-    # print("With cache")
-    print(f"A Cache size {len(alpha_beta_cache_dict)}")
-
-    # # print("without cache dict")
-
+    thein = sys.stdin.buffer.read()
+    thein = pickle.loads(thein)
+    output = alphabeta(*thein, alpha_beta_cache_dict)
+    
+    output = pickle.dumps(output)
+    sys.stdout.buffer.write(output)
+    sys.stdout.buffer.flush()
+    
+    with open(warmup_cache_dict_fp, 'wb') as f:
+        pickle.dump(dict(alpha_beta_cache_dict), f)
+    
+    # ---LOCAL TEST---
     # start_time = time.time()
-    # value, suggested_hero_pick_dict = alphabeta(
-    #     start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict)
     
-    # # print(suggested_hero_pick_dict)
+    # node = StateNode(*default_hero_pools, *default_hero_pools)
+    # node.add_hero("Axe", True, 3).add_hero("Tiny", True, 4).add_hero("Bane", False, -1).add_hero("Huskar", False, -1)
+    # output = alphabeta(node, 0, -999, 999, True, DEPTH_LIMIT, True, None)
     # end_time = time.time()
-    # elapsed_time = end_time - start_time  # in second
-    # print("Elapsed time in seconds: ", elapsed_time)
-    
-    
-    # print("Round 3")
-    
-    # # round 3
-    # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
-    #     .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)
-    
-    # round 1 not normal situation
-    start_node = StateNode(*ally_hero_pools, *opponent_hero_pools)
-    start_node.add_hero("Abaddon", True, 2)
-    
-    start_time = time.time()
-    value, suggested_hero_pick_dict = alphabeta(
-        start_node, 0, -999, 999, True, 0, alpha_beta_cache_dict)
-    # prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict)
-    
-    # print(suggested_hero_pick_dict)
-    end_time = time.time()
-    elapsed_time = end_time - start_time  # in second
-    print("Elapsed time in seconds: ", elapsed_time)     
-    start_node.add_hero("Elder Titan", True, 5)
-    heu = calculate_heuristic(start_node.ally_heros, start_node.opponent_heros)   
-    
-    # print("test ban hero")
-    # start_node.ban_hero("Muerta")
-    # start_time = time.time()
-    # value, suggested_hero_pick_dict = alphabeta(
-    #     start_node, 0, -999, 999, True, depth_limit, None)
-    
-    # print(suggested_hero_pick_dict)
-    # end_time = time.time()
-    # elapsed_time = end_time - start_time  # in second
-    # print("Elapsed time in seconds: ", elapsed_time)
-    
-    # print("with cache dict")
-    # start_time = time.time()
-    # value, suggested_hero_pick_dict = alphabeta(
-    #     start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict)
-    
-    # print(suggested_hero_pick_dict)
-    # end_time = time.time()
-    # elapsed_time = end_time - start_time  # in second
-    # print("Elapsed time in seconds: ", elapsed_time)
-    
-    # ! do not add cache dict when predict from round 3 
-    # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5).ban_hero("Anti-Mage")
+    # print(f"Process Time: {end_time - start_time:3f} sec.")
     
     # Eval records
     # DEPTH_LIMIT = 1 Round 3 Time: 04:35

@@ -23,8 +23,8 @@ from glob import glob
 import pickle
 
 import numpy as np
-from config import FIRST_ROUND_PICK_CHOICE, with_winrate_matrix, counter_rate_matrix, lane_rate_info_dict
-from config import PRUNE_WORST_HERO_NUM
+from dota_banpick.config import FIRST_ROUND_PICK_CHOICE, with_winrate_matrix, counter_rate_matrix, lane_rate_info_dict
+from dota_banpick.config import PRUNE_WORST_HERO_NUM
 from scipy.optimize import linear_sum_assignment
 
 def maximum_assignment_heroes(hero_list_full, hero_round_list_full):
@@ -498,6 +498,9 @@ class StateNode:
         output += "Oppo:\n"
         for hero in self.opponent_heros:
             output += f"\t{hero}\n"
+        output += "Bans:\n"
+        output += str(self.ban_lst)
+        output += "\n"
         output += f"Current Round: {self.cur_round}\n"
         return output
 

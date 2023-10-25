@@ -16,12 +16,27 @@ from streamlit_extras.image_in_tables import table_with_images
 from dota_banpick.config import DEPTH_LIMIT, FIRST_ROUND_PICK_CHOICE
 import pandas as pd
 from streamlit.errors import StreamlitAPIException
-
-from dota_banpick.st_cache import get_heros, pos_description, get_hero_csv_data_raw, get_name_abbrev_dict, get_hero_csv_data, get_image_data, init_warmup_cache_dict, load_cached_name_hero_pool_dict, load_default_hero_pools
+from dota_banpick.st_cache import get_heros, pos_description, get_hero_csv_data_raw, get_name_abbrev_dict, get_hero_csv_data, get_image_data, load_cached_name_hero_pool_dict, load_default_hero_pools
+import subprocess
+from subprocess import PIPE
+import time
 
 image_width = 11
 suggest_num = 5
 
+def pipe_alphabeta(*thein):
+    start_time = time.time()
+    thein = pickle.dumps(thein)
+    
+    p = subprocess.Popen(["python", "-m", "dota_banpick.alphabeta"],
+                               stdout=PIPE, stdin=PIPE, stderr=PIPE)
+    stdout_data = p.communicate(input=thein)[0]
+    output = pickle.loads(stdout_data)
+    # output = alphabeta(*thein)
+    
+    end_time = time.time()
+    st.toast(f"Process Time: {end_time - start_time:3f} sec.")
+    return output 
 
 def row_display_component(component_arg_list, width, show_compo_func):
     chunks_width = []
@@ -167,10 +182,12 @@ def form_pick_avoid_table(pick_list, str_pick_choice):
         outputtable[cols_name[i]] = lst
     return outputtable
 
-
+def myprint(num):
+    print(num)
+    
 def update_ban_hero_multiselect():
-    banlist = st.session_state["ban_multiselect"]
 
+    banlist = st.session_state["ban_multiselect"]
     if "the_bp_node" in st.session_state:
         banlst_num_before = len(st.session_state.the_bp_node.ban_lst)
         for banhero in banlist:
@@ -189,8 +206,8 @@ def update_ban_hero_multiselect():
         # update placeholder stuffs
         if "Preparation Drafting" in st.session_state.suggest_header_placeholder:
             with st.spinner("AI Searching..."):
-                val, prepara_phase_suggested_pick_dict = alphabeta(
-                    st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict, True)
+                val, prepara_phase_suggested_pick_dict = pipe_alphabeta(
+                    st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, True)
             prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
                 prepara_phase_suggested_pick_dict)
 
@@ -222,8 +239,8 @@ def update_ban_hero_multiselect():
 
         else:
             with st.spinner("AI Searching..."):
-                val, prepara_phase_suggested_pick_dict = alphabeta(
-                    st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict, True)
+                val, prepara_phase_suggested_pick_dict = pipe_alphabeta(
+                    st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, True)
 
             for ind, comboname in enumerate(prepara_phase_suggested_pick_dict):
                 impacted_player_lst = get_impacted_player_from_choice(
@@ -268,8 +285,8 @@ def update_pick_hero_oppo_multiselect():
                 "Try to conter the picked ones and avoid picking bad heroes.")
             if nonecount_before != nonecount:
                 with st.spinner("AI Searching..."):
-                    val, prepara_phase_suggested_pick_dict = alphabeta(
-                        st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict, True)
+                    val, prepara_phase_suggested_pick_dict = pipe_alphabeta(
+                        st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, True)
 
                 output_dict = compute_bad_picks_for_each_pos(
                     st.session_state.the_bp_node, suggest_num)
@@ -308,8 +325,8 @@ def ally_pick_select(select_key, ally_ind):
         selectedhero, True, ally_ind+1)
     
     if st.session_state.the_bp_node.ally_heros.count(None) in [4, 2]:
-        val, prepara_phase_suggested_pick_dict = alphabeta(
-            st.session_state.the_bp_node, 0, -999, 999, True, 0, None)
+        val, prepara_phase_suggested_pick_dict = pipe_alphabeta(
+            st.session_state.the_bp_node, 0, -999, 999, True, 0, False)
         prepare_phase_suggested_ban_dict = None 
         if st.session_state.the_bp_node.ally_heros.count(None) == 4 and ally_ind in [2,3,4]:   
             prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
@@ -374,8 +391,8 @@ def ready_to_bp_on_click():
     st.session_state.info_placeholder = ("In preparation phase, we only suggest Combos for Pos 3, 4 and 5."
                                          " This guidance stems from our assessment that Positions 1 and 2 should avoid early picks to reduce the risk of easy counters.")
     with st.spinner("AI Searching..."):
-        val, prepara_phase_suggested_pick_dict = alphabeta(
-            st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, alpha_beta_cache_dict, True)
+        val, prepara_phase_suggested_pick_dict = pipe_alphabeta(
+            st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, True)
     prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
         prepara_phase_suggested_pick_dict)
 
@@ -446,7 +463,6 @@ if __name__ == "__main__":
     ready_to_bp = False
     st.title("D2BP")
     player_cache_dict = load_cached_name_hero_pool_dict()
-    alpha_beta_cache_dict = init_warmup_cache_dict()
 
     # available position
     if "available_positions" not in st.session_state:

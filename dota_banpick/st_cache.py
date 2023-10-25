@@ -13,8 +13,7 @@ from PIL import Image
 
 
 record_folder = os.path.join(os.path.dirname(__file__), "data/records")
-warmup_cache_dict_fp = os.path.join(
-    record_folder, f"depth_limit_{DEPTH_LIMIT}_warmup_cache_dict.pkl")
+
 hero_name_csv_fp = os.path.join(record_folder, "heronames.csv")
 image_folder = os.path.join(os.path.dirname(__file__), "data/hero_wide_icons")
 # ! wow, same cache_resource function will share over pages !
@@ -46,17 +45,6 @@ def get_position_default_imgspath():
         "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/rubick.png",
         "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/crystal_maiden.png"
     ]
-
-
-@st.cache_resource
-def init_warmup_cache_dict():
-    cache_dict_manager = Manager()
-    if not os.path.exists(warmup_cache_dict_fp):
-        st.warning("Warmup Cache Dict Missing")
-    with open(warmup_cache_dict_fp, 'rb') as f:
-        warmup_cache_dict = pickle.load(f)
-    alpha_beta_cache_dict = cache_dict_manager.dict(warmup_cache_dict)
-    return alpha_beta_cache_dict
 
 
 @st.cache_data
@@ -165,6 +153,7 @@ def load_default_hero_pools():
 def load_cached_name_hero_pool_dict(): # no more cache because we want different users to use
     # singleton_manager = Manager()
     # cache_dict = singleton_manager.dict()
+    # return cache_dict
     if "singleton_cache_dict" not in st.session_state:
         st.session_state.singleton_cache_dict = dict()
     return st.session_state.singleton_cache_dict

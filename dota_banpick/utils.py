@@ -21,7 +21,7 @@ import os
 import pickle
 
 from natsort import natsorted
-from alphabeta import alphabeta
+from dota_banpick.alphabeta import alphabeta
 from config import DEPTH_LIMIT
 import time
 from tqdm.auto import tqdm
@@ -51,7 +51,7 @@ def generate_warmup_cache(depth_limit = 2):
     manager = Manager()
     alpha_beta_cache_dict = manager.dict()
     value, suggested_hero_pick_dict = alphabeta(
-        start_node, 0, -999, 999, True, depth_limit, alpha_beta_cache_dict, True)
+        start_node, 0, -999, 999, True, depth_limit, True, alpha_beta_cache_dict)
     
     # shrink it 
     alpha_beta_cache_dict = shrink_warmup_cache(alpha_beta_cache_dict)
@@ -63,7 +63,7 @@ def generate_warmup_cache(depth_limit = 2):
     print(f"A Cache size {len(alpha_beta_cache_dict)}")
     start_time = time.time()
     value, suggested_hero_pick_dict = alphabeta(
-        start_node, 0, -999, 999, True, depth_limit,alpha_beta_cache_dict, True)
+        start_node, 0, -999, 999, True, depth_limit, True, alpha_beta_cache_dict)
     
     end_time = time.time()
     elapsed_time = end_time - start_time # in second

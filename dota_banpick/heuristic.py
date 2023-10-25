@@ -20,8 +20,8 @@ import os
 
 from natsort import natsorted
 from tqdm.auto import tqdm
-from config import *
-from pickaction import StateNode
+from dota_banpick.config import *
+from dota_banpick.pickaction import StateNode
 import logging
 import numpy as np
 import itertools

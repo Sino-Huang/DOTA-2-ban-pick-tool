@@ -57,7 +57,7 @@ COUNTER_WEIGHT = 1.2 # increase if we want to focus more on countering the oppon
 BAN_SUGGEST_FRONT_POS_COUTNER_WEIGHT = 1.225  
 
 NODE_EXPANSION_LIMIT = 9999
-DEPTH_LIMIT = 1 # you cannot have it more than 2,, for real time speed up, set it to 1
+DEPTH_LIMIT = 0 # you cannot have it more than 2,, for real time speed up, set it to 0, 1 would take 10 secs, st to to warmup 
 SUGGESTION_NUM = 200
 
 FIRST_ROUND_PICK_CHOICE = [ # need to be in ascending order

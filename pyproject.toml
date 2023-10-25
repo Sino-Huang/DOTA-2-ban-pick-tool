@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dota_banpick"
 authors = [{name = "Sukai Huang", email = "huangsukai1997@gmail.com"}]
-version = "0.7.0"
+version = "0.7.1"
 requires-python = ">=3.10"
 description = "BP helper for DOTA 2"
 readme = "readme.md"
@@ -30,4 +30,4 @@ package-data = {"dota_banpick" = ["**/*"]} # include all of them
 
 
 [project.scripts]
-dota-banpick = "dota_banpick:main_cli"
+dota-banpick = "dota_banpick.__main__:main_cli"
