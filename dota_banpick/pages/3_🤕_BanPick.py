@@ -15,6 +15,7 @@ from dota_banpick.pickaction import StateNode
 from streamlit_extras.image_in_tables import table_with_images
 from dota_banpick.config import DEPTH_LIMIT, FIRST_ROUND_PICK_CHOICE
 import pandas as pd
+from streamlit.errors import StreamlitAPIException
 
 from dota_banpick.st_cache import get_heros, pos_description, get_hero_csv_data_raw, get_name_abbrev_dict, get_hero_csv_data, get_image_data, init_warmup_cache_dict, load_cached_name_hero_pool_dict, load_default_hero_pools
 
@@ -400,9 +401,12 @@ def ready_to_bp_on_click():
 
 
 if __name__ == "__main__":
-    st.set_page_config(
-        layout="wide"
-    )
+    try:
+        st.set_page_config(
+            layout="wide"
+        )
+    except StreamlitAPIException:
+        pass
 
     st.markdown("""
     <style>
