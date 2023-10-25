@@ -146,9 +146,11 @@ def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict):
         suggested_ban_hero_list = []
         pos_choices = eval(str_pick_choice)
         if pos_choices not in FIRST_ROUND_PICK_CHOICE:
-            assert RuntimeError("Not getting first round pos choice")
-        pos_choices_ind = FIRST_ROUND_PICK_CHOICE.index(pos_choices)
-        counter_poses = FIRST_ROUND_COUNTER_CHOICE[pos_choices_ind]
+            # assert RuntimeError("Not getting first round pos choice")
+            counter_poses = [3,4]
+        else:
+            pos_choices_ind = FIRST_ROUND_PICK_CHOICE.index(pos_choices)
+            counter_poses = FIRST_ROUND_COUNTER_CHOICE[pos_choices_ind]
 
         counter_pos_hero_combos = [(x, y) for x in default_hero_pools[counter_poses[0] - 1]
                                    for y in default_hero_pools[counter_poses[1] - 1] if x != y]

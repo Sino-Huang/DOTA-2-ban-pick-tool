@@ -328,7 +328,7 @@ def ally_pick_select(select_key, ally_ind):
         val, prepara_phase_suggested_pick_dict = pipe_alphabeta(
             st.session_state.the_bp_node, 0, -999, 999, True, 0, False)
         prepare_phase_suggested_ban_dict = None 
-        if st.session_state.the_bp_node.ally_heros.count(None) == 4 and ally_ind in [2,3,4]:   
+        if st.session_state.the_bp_node.ally_heros.count(None) == 4:   
             prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
                 prepara_phase_suggested_pick_dict)
 
