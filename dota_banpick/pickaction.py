@@ -502,6 +502,7 @@ class StateNode:
         output += str(self.ban_lst)
         output += "\n"
         output += f"Current Round: {self.cur_round}\n"
+        output += str(self.ally_hero_pools)
         return output
 
 
