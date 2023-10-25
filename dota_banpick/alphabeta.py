@@ -135,7 +135,6 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
         return value, None
 
     output_next_nodes_dict, pick_choice_combo_dict = node.next_possible_nodes()
-    a = 1
     if is_maximizing_player:  # need to output desired list
         value = -9999
         break_flag = False
@@ -376,7 +375,7 @@ if __name__ == "__main__":
     # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5).ban_hero("Anti-Mage")
 
     # print("With cache")
-    # print(f"A Cache size {len(alpha_beta_cache_dict)}")
+    print(f"A Cache size {len(alpha_beta_cache_dict)}")
 
     # # print("without cache dict")
 
@@ -396,19 +395,21 @@ if __name__ == "__main__":
     # start_node.add_hero("Abaddon", True, 1).add_hero("Anti-Mage", True, 5)\
     #     .add_hero("Huskar", False, 1).add_hero("Spectre", False, 2)
     
-    # round 1 conflict situation
+    # round 1 not normal situation
     start_node = StateNode(*ally_hero_pools, *opponent_hero_pools)
-    start_node.add_hero("Abaddon", True, 5)
+    start_node.add_hero("Abaddon", True, 2)
     
     start_time = time.time()
     value, suggested_hero_pick_dict = alphabeta(
         start_node, 0, -999, 999, True, 0, alpha_beta_cache_dict)
-    prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict)
+    # prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict)
     
     # print(suggested_hero_pick_dict)
     end_time = time.time()
     elapsed_time = end_time - start_time  # in second
-    print("Elapsed time in seconds: ", elapsed_time)        
+    print("Elapsed time in seconds: ", elapsed_time)     
+    start_node.add_hero("Elder Titan", True, 5)
+    heu = calculate_heuristic(start_node.ally_heros, start_node.opponent_heros)   
     
     # print("test ban hero")
     # start_node.ban_hero("Muerta")

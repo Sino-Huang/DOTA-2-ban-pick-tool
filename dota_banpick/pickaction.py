@@ -463,7 +463,7 @@ class StateNode:
                             continue
 
                     # faster due to no checking
-                    new_node._hero_set(combo[ind], is_ally_next_turn, pos-1)
+                    new_node._hero_set(combo[ind], pos-1, is_ally_next_turn)
 
                 output_next_nodes_dict[str_pos_pick_choice].append(new_node)
                 node_expansion_count += 1

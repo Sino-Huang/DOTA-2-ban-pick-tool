@@ -169,15 +169,20 @@ def form_pick_avoid_table(pick_list, str_pick_choice):
 
 def update_ban_hero_multiselect():
     banlist = st.session_state["ban_multiselect"]
+
+    if "the_bp_node" in st.session_state:
+        banlst_num_before = len(st.session_state.the_bp_node.ban_lst)
+        for banhero in banlist:
+            st.session_state.the_bp_node.ban_hero(banhero)
+        banlst_num_after = len(st.session_state.the_bp_node.ban_lst)
+        if banlst_num_before == banlst_num_after:
+            return
+    
     imgfilenames = list(
-        st.session_state['raw_df']['Image filename'].loc[banlist].str.strip())
+        st.session_state['raw_df']['Image filename'].loc[list(st.session_state.the_bp_node.ban_lst)].str.strip())
     img_array = get_image_data(imgfilenames)
     st.session_state['ban_image_args_list'] = list(
         zip(img_array, [None for _ in range(len(banlist))]))
-
-    if "the_bp_node" in st.session_state:
-        for banhero in banlist:
-            st.session_state.the_bp_node.ban_hero(banhero)
 
     if st.session_state.the_bp_node.ally_heros.count(None) != 0:
         # update placeholder stuffs
