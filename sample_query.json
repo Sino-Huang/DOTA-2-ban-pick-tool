@@ -1,0 +1,20 @@
+{
+    "ban_list" : [
+        "Wraith King",
+        "Broodmother",
+        "Chaos Knight",
+        "Necrophos",
+        "Outworld Destroyer",
+        "Huskar"
+    ],
+    "User_ID" : "123456789",
+    "round": 2,
+    "ally_pick_list" : {
+        "Position 5" : "Treant Protector",
+        "Position 4" : "Vengeful Spirit"
+    },
+    "opponent_pick_list" : [
+        "Dark Willow",
+        "Magnus"
+    ]
+}
