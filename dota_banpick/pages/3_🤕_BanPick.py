@@ -307,7 +307,6 @@ def ally_pick_select(select_key, ally_ind):
         selectedhero, True, ally_ind+1)
     
     if st.session_state.the_bp_node.ally_heros.count(None) in [4, 2]:
-        st.write(st.session_state.the_bp_node)
         val, prepara_phase_suggested_pick_dict = alphabeta(
             st.session_state.the_bp_node, 0, -999, 999, True, 0, None)
         prepare_phase_suggested_ban_dict = None 
