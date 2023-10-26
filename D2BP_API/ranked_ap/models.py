@@ -6,15 +6,35 @@ from hashlib import sha256
 
 class Attribute(models.Model):
     name = models.CharField(max_length=32, primary_key=True)
+    order = models.IntegerField()
+
+    class Meta:
+        ordering = ['order']
+        verbose_name_plural = "Attributes"
+    
+    def __str__(self):
+        return self.name
+
 
 class Hero(models.Model):
     name = models.CharField(max_length=32, primary_key=True)
     alt_name = models.CharField(max_length=32)
     primary_attribute = models.ForeignKey(Attribute, on_delete=models.CASCADE)
 
+    class Meta:
+        ordering = ['primary_attribute', 'name']
+        verbose_name_plural = "Heroes"
+
+    def __str__(self):
+        return self.name
+
 class GameVersion(models.Model):
     version = models.CharField(max_length=32, primary_key=True)
     hero_list = models.ManyToManyField(Hero, default=Hero.objects.all)
+
+    def __str__(self):
+        return self.version
+
 
 class Query(models.Model):
     query_id = models.CharField(max_length=64, primary_key=True)
@@ -35,8 +55,8 @@ class Query(models.Model):
             "query_id": self.query_id,
             "version": self.version.version,
             "round": self.round,
-            "ban_list": [hero.name for hero in self.ban_list.all()],
-            "opponent_pick_list": [hero.name for hero in self.opponent_pick_list.all()],
+            "ban_list": sorted([hero.name for hero in self.ban_list.all()]),
+            "opponent_pick_list": sorted([hero.name for hero in self.opponent_pick_list.all()]),
             "ally_pick_list": self.ally_pick_list,
         }, indent=4)
 
