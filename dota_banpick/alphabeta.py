@@ -129,6 +129,9 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
             updated_suggested_hero_list = sorted(
                 updated_suggested_hero_list, key=lambda x: x[1], reverse=True)
             suggested_hero_pick_dict[str_pick_choice] = updated_suggested_hero_list
+            
+        if cache_dict is not None and activate_saving_cache and depth == 0:
+            cache_dict[str(node)] = (value, suggested_hero_pick_dict)
         return value, suggested_hero_pick_dict
         # ! -----------------------
 

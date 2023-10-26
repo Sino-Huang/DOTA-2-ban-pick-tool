@@ -144,35 +144,22 @@ def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict):
     suggested_hero_ban_dict = dict()
     for str_pick_choice, suggested_hero_list in suggested_hero_pick_dict.items():
         suggested_ban_hero_list = []
-        pos_choices = eval(str_pick_choice)
-        if pos_choices not in FIRST_ROUND_PICK_CHOICE:
-            # assert RuntimeError("Not getting first round pos choice")
-            counter_poses = [3,4]
-        else:
-            pos_choices_ind = FIRST_ROUND_PICK_CHOICE.index(pos_choices)
-            counter_poses = FIRST_ROUND_COUNTER_CHOICE[pos_choices_ind]
-
-        counter_pos_hero_combos = [(x, y) for x in default_hero_pools[counter_poses[0] - 1]
-                                   for y in default_hero_pools[counter_poses[1] - 1] if x != y]
         for our_combo, _ in suggested_hero_list:
-            counter_max_score = -999
-            counter_max_ind = -999
-            for oppo_ind, oppo_combo in enumerate(counter_pos_hero_combos):
-                if oppo_combo[0] in our_combo or oppo_combo[1] in our_combo:
-                    continue
-
-                score = counter_rate_matrix[oppo_combo[0]][our_combo[0]] * BAN_SUGGEST_FRONT_POS_COUTNER_WEIGHT * \
-                    BAN_SUGGEST_FRONT_POS_COUTNER_WEIGHT  # pos at front is more significant, thus weigh more
-                score += counter_rate_matrix[oppo_combo[0]][our_combo[1]]
-                score += counter_rate_matrix[oppo_combo[1]
-                                             ][our_combo[0]] * BAN_SUGGEST_FRONT_POS_COUTNER_WEIGHT
-                score += counter_rate_matrix[oppo_combo[1]][our_combo[1]]
-
-                if counter_max_score < score:
-                    counter_max_score = score
-                    counter_max_ind = oppo_ind
+            ban_heros_sorted = []
+            for hr in our_combo:
+                lc = 0 
+                for cth in reversed(counter_rate_matrix[hr].keys()):
+                    if cth in our_combo:
+                        continue
+                    ban_heros_sorted.append((cth, counter_rate_matrix[hr][cth]))
+                    lc += 1
+                    if lc == 5:
+                        break
+            ban_heros_sorted = sorted(ban_heros_sorted, key= lambda x: x[1])
+            ban_heros_sorted = ban_heros_sorted[:4]
+            ban_heros_sorted = [x for x,_ in ban_heros_sorted]
             suggested_ban_hero_list.append(
-                counter_pos_hero_combos[counter_max_ind])
+                ban_heros_sorted)
         suggested_hero_ban_dict[str_pick_choice] = suggested_ban_hero_list
 
     return suggested_hero_ban_dict

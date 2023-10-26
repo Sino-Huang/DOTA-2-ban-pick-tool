@@ -121,10 +121,14 @@ def get_hero_csv_data_raw():
 def get_image_data(imgfilenames):
     output_img_array = []
     for imgfn in imgfilenames:
-        imgfp = os.path.join(image_folder, imgfn+".png")
-
-        img = Image.open(imgfp)
-        output_img_array.append(img)
+        # imgfp = os.path.join(image_folder, imgfn+".png")
+        # img = Image.open(imgfp)
+        # output_img_array.append(img)
+        
+        # use cdn directly
+        imgfp = f"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/{imgfn}.png"
+        output_img_array.append(imgfp)
+        
 
     return output_img_array
 
