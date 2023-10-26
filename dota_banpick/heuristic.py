@@ -138,7 +138,7 @@ def compute_bad_picks_for_each_pos(statenode: StateNode,
     return output_dict
 
 
-def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict, suggest_num = 4):
+def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict, suggest_num = 5):
     # suggested_hero_pick_dict[str_pick_choice] = updated_suggested_hero_list
     # output structure : suggested_hero_ban_dict[str_pick_choice] = suggested_ban_hero_list
     suggested_hero_ban_dict = dict()
