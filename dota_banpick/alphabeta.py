@@ -170,18 +170,18 @@ def alphabeta(node: StateNode, depth, alpha, beta, is_maximizing_player, depth_l
                             suggested_hero_list, next_node_values_list,
                             pick_choice_combo_dict, str_pick_choice, break_flag_list, activate_saving_cache) for local_node_ind, next_node in enumerate(next_node_lst)]
                 workers_num = 7
-                # try:
-                #     process_map(support_process_map_func, mapargs,
-                #                 max_workers=workers_num, chunksize=40, leave=False)
-                # except ABCutOffException:
-                #     pass
+                try:
+                    process_map(support_process_map_func, mapargs,
+                                max_workers=workers_num, chunksize=40, leave=False)
+                except ABCutOffException:
+                    pass
                 
-                with Pool(workers_num) as pool:
-                    try:
-                        pool.map(support_process_map_func, mapargs,
-                                    chunksize=40)
-                    except ABCutOffException:
-                        pass
+                # with Pool(workers_num) as pool:
+                #     try:
+                #         pool.map(support_process_map_func, mapargs,
+                #                     chunksize=40)
+                #     except ABCutOffException:
+                #         pass
 
                 max_next_node_value = max(next_node_values_list)
                 value = max(value, max_next_node_value)

@@ -161,3 +161,11 @@ def load_cached_name_hero_pool_dict(): # no more cache because we want different
     if "singleton_cache_dict" not in st.session_state:
         st.session_state.singleton_cache_dict = dict()
     return st.session_state.singleton_cache_dict
+
+@st.cache_resource
+def load_alpha_beta_cache_dict():
+    with open(os.path.join(record_folder, 'depth_limit_1_warmup_cache_dict.pkl'), 'rb') as f:
+        d = pickle.load(f)
+    singleton_alpha_beta_manager = Manager()
+    cache_dict = singleton_alpha_beta_manager.dict(d)
+    return cache_dict
