@@ -164,8 +164,13 @@ def load_cached_name_hero_pool_dict(): # no more cache because we want different
 
 @st.cache_resource
 def load_alpha_beta_cache_dict():
-    with open(os.path.join(record_folder, 'depth_limit_1_warmup_cache_dict.pkl'), 'rb') as f:
-        d = pickle.load(f)
     singleton_alpha_beta_manager = Manager()
-    cache_dict = singleton_alpha_beta_manager.dict(d)
-    return cache_dict
+    
+    if os.path.exists(os.path.join(record_folder, 'depth_limit_1_warmup_cache_dict.pkl')):
+        with open(os.path.join(record_folder, 'depth_limit_1_warmup_cache_dict.pkl'), 'rb') as f:
+            d = pickle.load(f)
+        cache_dict = singleton_alpha_beta_manager.dict(d)
+        return cache_dict
+    else:
+        cache_dict = singleton_alpha_beta_manager.dict()
+        return cache_dict
