@@ -138,7 +138,7 @@ def compute_bad_picks_for_each_pos(statenode: StateNode,
     return output_dict
 
 
-def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict):
+def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict, suggest_num = 4):
     # suggested_hero_pick_dict[str_pick_choice] = updated_suggested_hero_list
     # output structure : suggested_hero_ban_dict[str_pick_choice] = suggested_ban_hero_list
     suggested_hero_ban_dict = dict()
@@ -159,10 +159,10 @@ def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict):
                         cscore = counter_rate_matrix[hr][cth]
                     ban_heros_sorted.append((cth, cscore))
                     lc += 1
-                    if lc == 5:
+                    if lc == suggest_num:
                         break
             ban_heros_sorted = sorted(ban_heros_sorted, key= lambda x: x[1])
-            ban_heros_sorted = ban_heros_sorted[:4]
+            ban_heros_sorted = ban_heros_sorted[:suggest_num]
             ban_heros_sorted = [x for x,_ in ban_heros_sorted]
             suggested_ban_hero_list.append(
                 ban_heros_sorted)
@@ -188,12 +188,13 @@ if __name__ == "__main__":
             opponent_hero_pools.append(eval(hp_text))
 
     start_node = StateNode(*ally_hero_pools, *opponent_hero_pools)
-    start_node.add_hero('Earthshaker',True,2)
-    start_node.add_hero('Faceless Void',True,1)
-    start_node.add_hero('Lone Druid',False,2)
-    start_node.add_hero('Ancient Apparition',False,5)
-
-    compute_bad_picks_for_each_pos(start_node)
+    # start_node.add_hero('Earthshaker',True,2)
+    start_node.add_hero('Spectre',True,1)
+    # start_node.add_hero('Lone Druid',False,2)
+    # start_node.add_hero('Ancient Apparition',False,5)
+    # _, suggested_hero_pick_dict = alphabeta(start_node, 0, -999, 999, True, 0, False)
+    # suggested_hero_ban_dict = compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict, 10)
+    # compute_bad_picks_for_each_pos(start_node)
 # {1: ['Arc Warden', 'Alchemist', 'Anti-Mage', 'Spectre'],
 #  2: ['Pugna', 'Alchemist', 'Huskar', 'Anti-Mage'],
 #  3: ['Abaddon', 'Night Stalker', 'Legion Commander', 'Huskar'],
