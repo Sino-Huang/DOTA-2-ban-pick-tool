@@ -153,11 +153,7 @@ def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict, sugg
                         continue
                     if cth in UNCOMMON_HEROES:
                         continue
-                    if tind == 0: 
-                        cscore = counter_rate_matrix[hr][cth] * BAN_SUGGEST_FRONT_POS_COUTNER_WEIGHT
-                    else:
-                        cscore = counter_rate_matrix[hr][cth]
-                    ban_heros_sorted.append((cth, cscore))
+                    ban_heros_sorted.append((cth, counter_rate_matrix[hr][cth]))
                     lc += 1
                     if lc == suggest_num:
                         break
