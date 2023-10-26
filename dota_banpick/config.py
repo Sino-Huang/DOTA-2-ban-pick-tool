@@ -117,3 +117,5 @@ COUNTER_TEMPERATURE_LIST = [
     POS_4_COUNTER_TEMPERATURE,
     POS_5_COUNTER_TEMPERATURE
 ]
+
+UNCOMMON_HEROES = ["Meepo", "Visage", "Chen", "Arc Warden", "Lycan", "Broodmother"]

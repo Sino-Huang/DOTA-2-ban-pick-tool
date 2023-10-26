@@ -146,12 +146,18 @@ def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict):
         suggested_ban_hero_list = []
         for our_combo, _ in suggested_hero_list:
             ban_heros_sorted = []
-            for hr in our_combo:
+            for tind , hr in enumerate(our_combo):
                 lc = 0 
                 for cth in reversed(counter_rate_matrix[hr].keys()):
                     if cth in our_combo:
                         continue
-                    ban_heros_sorted.append((cth, counter_rate_matrix[hr][cth]))
+                    if cth in UNCOMMON_HEROES:
+                        continue
+                    if tind == 0: 
+                        cscore = counter_rate_matrix[hr][cth] * BAN_SUGGEST_FRONT_POS_COUTNER_WEIGHT
+                    else:
+                        cscore = counter_rate_matrix[hr][cth]
+                    ban_heros_sorted.append((cth, cscore))
                     lc += 1
                     if lc == 5:
                         break
