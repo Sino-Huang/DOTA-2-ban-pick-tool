@@ -171,6 +171,7 @@ class StateNode:
             checkt_hero_list = self.ally_heros
         else:
             checkt_hero_list = self.opponent_heros
+            
         if position <= 0:
             # meaning we need to auto guess and reorder the positions
             auto_guess_flag = True
@@ -192,46 +193,36 @@ class StateNode:
             logging.warning(f"Hero {hero_name} is not available already")
             return self
 
-
+        
         if is_ally:
             # two sit, one is to progress to new round, the other is to achieve current round
             # check if progress to new round
             if self.cur_round in [0, 2, 4] and self.opponent_pick_rounds.count(self.cur_round) >= 2:
                 self.cur_round += 1
-                # ally hero update
-                self._hero_set(hero_name, position_index, is_ally)
-
             # check if achieve current round
             elif self.cur_round in [1, 3] and self.ally_pick_rounds.count(self.cur_round) == 1:
-                # ally hero update
-                self._hero_set(hero_name, position_index, is_ally)
-
+                self.cur_round += 0
             else:
                 logging.warning("invalid add ally hero case")
-                return self
+                return self            
 
         else:
             # two sit, one is to progress to new round, the other is to achieve current round
             # check if progress to new round
             if self.cur_round in [1, 3] and self.ally_pick_rounds.count(self.cur_round) == 2:
                 self.cur_round += 1
-                # opponent hero update
-                self._hero_set(hero_name, position_index, is_ally)
-
             # new round case 2
             elif self.cur_round in [5] and self.ally_pick_rounds.count(self.cur_round) == 1:
                 self.cur_round += 1
-                # opponent hero update
-                self._hero_set(hero_name, position_index, is_ally)
-
             # check if achieve current round
             elif self.cur_round in [2, 4] and self.opponent_pick_rounds.count(self.cur_round) == 1:
-                # opponent hero update
-                self._hero_set(hero_name, position_index, is_ally)
-
+                self.cur_round += 0
             else:
                 logging.warning("invalid add opponent hero case")
                 return self
+            
+        # hero update
+        self._hero_set(hero_name, position_index, is_ally)
 
         if auto_guess_flag:
             if is_ally:
@@ -262,12 +253,15 @@ class StateNode:
         # 3. hero pool restricted
 
         is_ally_next_turn = None
+        pick_same_hero_sit_flag = False
 
         # get available hero pools
-        if self.cur_round in [0, 2, 4]:
+        if self.cur_round in [0, 2, 4] and self.opponent_pick_rounds.count(self.cur_round) >= 2:
             is_ally_next_turn = True
         elif self.cur_round in [1, 3] and self.ally_pick_rounds.count(self.cur_round) == 1:
             is_ally_next_turn = True
+            pick_same_hero_sit_flag = True
+            
         else:
             is_ally_next_turn = False
 
@@ -318,10 +312,7 @@ class StateNode:
         pick_choice_combo_dict = dict()
 
         # consider pick same hero situation
-        pick_same_hero_sit_flag = False
-        if self.cur_round in [1, 3] and self.ally_pick_rounds.count(self.cur_round) == 1:
-            # we set a flag and some mods
-            pick_same_hero_sit_flag = True
+        if pick_same_hero_sit_flag:
             # next round is still cur_round though we fix one hero input
             next_round = self.cur_round
 
@@ -330,86 +321,48 @@ class StateNode:
             fix_hero_pos = fix_hero_pos_ind + 1
             
         # normal case
-        if next_round in [1, 2]:
-            if pick_same_hero_sit_flag:
-                temp_l = []
-                for pc in first_round_pick_choice:
-                    if fix_hero_pos in pc:
-                        temp_l.append(pc)
-                if len(temp_l) == 0:
-                    # in case it is not normal pos pick
-                    temp_l.append([fix_hero_pos, 5])
-                first_round_pick_choice = temp_l
+        if next_round in [1, 2, 3, 4]:
+            if next_round in [1,2]:
+                round_pick_choice = first_round_pick_choice
+                if pick_same_hero_sit_flag:
+                    temp_l = []
+                    for pc in round_pick_choice:
+                        if fix_hero_pos in pc:
+                            temp_l.append(pc)
+                    if len(temp_l) == 0:
+                        # in case it is not normal pos pick
+                        temp_l.append([fix_hero_pos, 5])
+                    round_pick_choice = temp_l
+            else:
+                # you need to check what pos combo is available
+                available_pos_lst = []  # natural dota position number 1-5
+                for ind in range(len(hero_list)):
+                    if hero_list[ind] is None:
+                        available_pos_lst.append(ind + 1)
+                if pick_same_hero_sit_flag:
+                    available_pos_lst.append(fix_hero_pos)
+                available_pos_lst = sorted(available_pos_lst)
+                round_pick_choice = list(
+                    itertools.combinations(available_pos_lst, 2))
+                if pick_same_hero_sit_flag:
+                    round_pick_choice = [x for x in round_pick_choice if fix_hero_pos in x]
+
 
             # you can only pick under restriction
-            for pick_choice in first_round_pick_choice:
+            for pick_choice in round_pick_choice:
                 pc_sorted = pick_choice  # ! assume sort arry for first round
                 if pick_same_hero_sit_flag:
                     fix_hero_pos_local_ind = pc_sorted.index(fix_hero_pos)
                 pick_indexs = [x - 1 for x in pc_sorted]  # pythonic index
                 assert len(pick_indexs) == 2
-                hero_pool_a = filtered_hero_pool_lst[pick_indexs[0]]
-                hero_pool_b = filtered_hero_pool_lst[pick_indexs[1]]
-
+                picked_hero_pools = [filtered_hero_pool_lst[pick_ind] for pick_ind in pick_indexs]
                 if pick_same_hero_sit_flag:
-                    if fix_hero_pos_local_ind == 0:
-                        hero_pool_a = [fix_hero]
-                    else:
-                        hero_pool_b = [fix_hero]
-
-                hero_pick_combo_list = [
-                    (a, b) for a in hero_pool_a for b in hero_pool_b if a != b]
+                    picked_hero_pools[fix_hero_pos_local_ind] = [fix_hero]
+                
+                hero_pick_combo_list = itertools.product(*picked_hero_pools)
+                hero_pick_combo_list = [x for x in hero_pick_combo_list if len(set(x)) == len(x)]
                 pick_choice_combo_dict[str(pc_sorted)] = hero_pick_combo_list
 
-        elif next_round in [3, 4]:
-            # you need to check what pos combo is available
-            available_pos_lst = []  # natural dota position number 1-5
-            for ind in range(len(hero_list)):
-                if hero_list[ind] is None:
-                    available_pos_lst.append(ind + 1)
-            if pick_same_hero_sit_flag:
-                available_pos_lst.append(fix_hero_pos)
-            available_pos_lst = sorted(available_pos_lst)
-            round_pick_choice = list(
-                itertools.combinations(available_pos_lst, 2))
-            if pick_same_hero_sit_flag:
-                temp_l = []
-                for pc in round_pick_choice:
-                    if fix_hero_pos in pc:
-                        temp_l.append(pc)
-                round_pick_choice = temp_l
-
-            for pick_choice in round_pick_choice:
-                pc_sorted = pick_choice  # ! assume already done after itertools.combination
-                if pick_same_hero_sit_flag:
-                    fix_hero_pos_local_ind = pc_sorted.index(fix_hero_pos)
-
-                pick_indexs = [x - 1 for x in pc_sorted]  # pythonic index
-                assert len(pick_indexs) == 2
-                hero_pool_a = filtered_hero_pool_lst[pick_indexs[0]]
-                hero_pool_b = filtered_hero_pool_lst[pick_indexs[1]]
-
-                if pick_same_hero_sit_flag:
-                    if fix_hero_pos_local_ind == 0:
-                        hero_pool_a = [fix_hero]
-                    else:
-                        hero_pool_b = [fix_hero]
-                hero_pick_combo_list = []
-                # ! combo list too big, prune it based on with rate matrix
-                for a in hero_pool_a:
-                    least_combo_heros = []
-                    for tempi, w_hero in enumerate(reversed(with_winrate_matrix[a].keys())):
-                        if tempi >= PRUNE_WORST_HERO_NUM:
-                            break
-                        least_combo_heros.append(w_hero)
-                    for b in hero_pool_b:
-                        if a == b:
-                            continue
-                        if b in least_combo_heros:
-                            continue
-                        hero_pick_combo_list.append((a, b))
-
-                pick_choice_combo_dict[str(pc_sorted)] = hero_pick_combo_list
 
         else:  # meaning is [5,6]
             # get the last available pos
