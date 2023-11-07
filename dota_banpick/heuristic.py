@@ -138,6 +138,39 @@ def compute_bad_picks_for_each_pos(statenode: StateNode,
     return output_dict
 
 
+def compute_with_and_counter_heroes_for_each_pos(heroname: str,
+                                   display_num=5):
+    # output structure : {pos: [bad_hero_ele,]}
+    # give a list of heros that the opponent may counter you most
+
+    # filter available hero pools
+    hero_pool_lst = default_hero_pools
+
+    # calculate versus rate
+    output_with_dict = dict()  # {dota_position: [with_heros]}
+    output_counter_dict = dict()  # {dota_position: [counter_heros]}
+    
+    for pos_ind, pos_hero_pool in enumerate(hero_pool_lst):
+        # hero_counterrate_tuple_list = []  # [(hero, score)]
+        # hero_withrate_tuple_list = []  # [(hero, score)]
+        
+        hero_counterrate_tuple_list = [(thero, counter_rate_matrix[heroname][thero]) for thero in pos_hero_pool if thero != heroname]
+        hero_withrate_tuple_list = [(thero, with_winrate_matrix[heroname][thero]) for thero in pos_hero_pool if thero != heroname]
+        # once we get hero_winrate_tuple_list, we sort it and get display_num of it
+        
+        hero_counterrate_tuple_list_trunc = sorted(
+            hero_counterrate_tuple_list, key=lambda x: x[1])[:display_num]
+        hero_withrate_tuple_list_trunc = sorted(
+            hero_withrate_tuple_list, key=lambda x: x[1], reverse=True
+        )[:display_num]
+        output_counter_dict[pos_ind+1] = [x[0]
+                                  for x in hero_counterrate_tuple_list_trunc]
+        output_with_dict[pos_ind+1] = [x[0]
+                                  for x in hero_withrate_tuple_list_trunc]
+
+    return output_with_dict, output_counter_dict
+
+
 def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict, suggest_num = 5):
     # suggested_hero_pick_dict[str_pick_choice] = updated_suggested_hero_list
     # output structure : suggested_hero_ban_dict[str_pick_choice] = suggested_ban_hero_list
