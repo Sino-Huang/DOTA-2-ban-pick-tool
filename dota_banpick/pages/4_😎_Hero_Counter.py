@@ -44,10 +44,10 @@ def row_display_component(component_arg_list, width, show_compo_func):
                 show_compo_func(*args)
 
 def display_table(title, pos_ind, table):
-    annotated_text((pos_description[pos_ind].split(
+    annotated_text("Recommended heroes if you play ", (pos_description[pos_ind].split(
                         " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
     st.markdown(table_with_images(df=table,
-                                  url_columns=['Counterted By', 'Good With']),
+                                  url_columns=['Bad Against', 'Good With']),
                 unsafe_allow_html=True)
     
     st.divider()
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     if 'raw_df' not in st.session_state:
         st.session_state['raw_df'] = get_hero_csv_data_raw()
 
-    st.title("Know How to Counter a Hero")
+    st.title("Know How to Matchup With a Hero")
     st.selectbox(f"Hero",
                  options=st.session_state['name_abbrev_dict_keys_list'],
                  format_func=lambda x: st.session_state['name_abbrev_dict'][x],
@@ -83,17 +83,21 @@ if __name__ == "__main__":
             st.image(get_online_image_urls(
                 [st.session_state['p4_target_hero']])[0])
         with tcol[1]:
-            st.write("Common Pos")
+            st.caption("Common Pos")
             for pos_ind, pool in enumerate(default_hero_pools):
                 if st.session_state['p4_target_hero'] in pool:
                     annotated_text((pos_description[pos_ind].split(
                         " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
         st.subheader("Match Up Stats")
+        heroname = st.session_state['p4_target_hero']
+        # st.info(f"请根据你的位置, 查看推荐英雄, 如果{heroname}是你的队友在玩, 你可以选择Good With一栏的英雄配合{heroname}, 如果{heroname}是敌人在玩, 你可以选择Bad Against一栏的英雄克制{heroname}")
+        st.info(f"Please check for recommended heroes based on your position. If {heroname} is on the opposing team, you can choose heroes listed in the 'Bad Against' column to counter {heroname}. If {heroname} is on your team, you can choose heroes listed in the 'Good With' column to complement {heroname}.")
+        
         output_args = []
         for col_ind in range(5):
             position = col_ind+1
             dataframe = {
-                "Counterted By": get_online_image_urls(st.session_state['p4_target_hero_counter_dict'][position]),
+                "Bad Against": get_online_image_urls(st.session_state['p4_target_hero_counter_dict'][position]),
                 "Good With": get_online_image_urls(st.session_state['p4_target_hero_with_dict'][position])
             }
             dataframe = pd.DataFrame(dataframe)
