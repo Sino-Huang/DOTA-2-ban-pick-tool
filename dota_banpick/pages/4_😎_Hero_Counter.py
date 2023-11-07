@@ -44,12 +44,13 @@ def row_display_component(component_arg_list, width, show_compo_func):
                 show_compo_func(*args)
 
 def display_table(title, pos_ind, table):
-    st.subheader(title)
     annotated_text((pos_description[pos_ind].split(
                         " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
     st.markdown(table_with_images(df=table,
                                   url_columns=['Counterted By', 'Good With']),
                 unsafe_allow_html=True)
+    
+    st.divider()
 
 if __name__ == "__main__":
     try:
@@ -87,7 +88,7 @@ if __name__ == "__main__":
                 if st.session_state['p4_target_hero'] in pool:
                     annotated_text((pos_description[pos_ind].split(
                         " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
-
+        st.subheader("Match Up Stats")
         output_args = []
         for col_ind in range(5):
             position = col_ind+1
