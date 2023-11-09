@@ -147,7 +147,7 @@ def compute_with_and_counter_heroes_for_each_pos(heroname: str,
     hero_pool_lst = default_hero_pools
 
     # calculate versus rate
-    output_with_dict = dict()  # {dota_position: [with_heros]}
+    output_syne_dict = dict()  # {dota_position: [with_heros]}
     output_counter_dict = dict()  # {dota_position: [counter_heros]}
     
     for pos_ind, pos_hero_pool in enumerate(hero_pool_lst):
@@ -155,20 +155,20 @@ def compute_with_and_counter_heroes_for_each_pos(heroname: str,
         # hero_withrate_tuple_list = []  # [(hero, score)]
         
         hero_counterrate_tuple_list = [(thero, counter_rate_matrix[heroname][thero]) for thero in pos_hero_pool if thero != heroname]
-        hero_withrate_tuple_list = [(thero, with_winrate_matrix[heroname][thero]) for thero in pos_hero_pool if thero != heroname]
+        hero_synergyrate_tuple_list = [(thero, synergy_rate_matrix[heroname][thero]) for thero in pos_hero_pool if thero != heroname]
         # once we get hero_winrate_tuple_list, we sort it and get display_num of it
         
         hero_counterrate_tuple_list_trunc = sorted(
             hero_counterrate_tuple_list, key=lambda x: x[1])[:display_num]
-        hero_withrate_tuple_list_trunc = sorted(
-            hero_withrate_tuple_list, key=lambda x: x[1], reverse=True
+        hero_synergyrate_tuple_list_trunc = sorted(
+            hero_synergyrate_tuple_list, key=lambda x: x[1], reverse=True
         )[:display_num]
         output_counter_dict[pos_ind+1] = [x[0]
                                   for x in hero_counterrate_tuple_list_trunc]
-        output_with_dict[pos_ind+1] = [x[0]
-                                  for x in hero_withrate_tuple_list_trunc]
+        output_syne_dict[pos_ind+1] = [x[0]
+                                  for x in hero_synergyrate_tuple_list_trunc]
 
-    return output_with_dict, output_counter_dict
+    return output_syne_dict, output_counter_dict
 
 
 def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict, suggest_num = 5):

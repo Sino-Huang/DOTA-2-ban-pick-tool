@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dota_banpick"
 authors = [{name = "Sukai Huang", email = "huangsukai1997@gmail.com"}]
-version = "0.7.1"
+version = "0.7.2"
 requires-python = ">=3.10"
 description = "BP helper for DOTA 2"
 readme = "readme.md"

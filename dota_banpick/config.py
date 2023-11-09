@@ -27,12 +27,17 @@ with_winrate_matrix_fp = os.path.join(
     record_folder, "with_winrate_matrix.pkl")
 counter_rate_matrix_fp = os.path.join(
     record_folder, "counter_rate_matrix.pkl")
+synergy_rate_matrix_fp = os.path.join(
+    record_folder, "synergy_rate_matrix.pkl")
+
 with open(versus_winrate_matrix_fp, 'rb') as f:
     versus_winrate_matrix = pickle.load(f)
 with open(with_winrate_matrix_fp, 'rb') as f:
     with_winrate_matrix = pickle.load(f)
 with open(counter_rate_matrix_fp, 'rb') as f:
     counter_rate_matrix = pickle.load(f)
+with open(synergy_rate_matrix_fp, 'rb') as f:
+    synergy_rate_matrix = pickle.load(f)
     
 hero_pool_fps = glob(os.path.join(
     record_folder, "default_pos_*_hero_pool.txt"))
@@ -49,7 +54,7 @@ lane_rate_dict_fp = os.path.join(
 with open(lane_rate_dict_fp, 'rb') as f:
     lane_rate_info_dict = pickle.load(f)
 
-LAST_UPDATE = "27 Oct 2023"
+LAST_UPDATE = "9 Nov 2023"
 
 COUNTER_WEIGHT = 1.2 # increase if we want to focus more on countering the opponents rather than hero combo
                      # try 0.1 interval 
