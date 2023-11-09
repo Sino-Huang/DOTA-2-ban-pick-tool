@@ -155,7 +155,7 @@ def compute_with_and_counter_heroes_for_each_pos(heroname: str,
         # hero_withrate_tuple_list = []  # [(hero, score)]
         
         hero_counterrate_tuple_list = [(thero, counter_rate_matrix[heroname][thero]) for thero in pos_hero_pool if thero != heroname]
-        hero_synergyrate_tuple_list = [(thero, synergy_rate_matrix[heroname][thero]) for thero in pos_hero_pool if thero != heroname]
+        hero_synergyrate_tuple_list = [(thero, synergy_rate_matrix[heroname][thero] + (with_winrate_matrix[heroname][thero] -0.5)*0.2) for thero in pos_hero_pool if thero != heroname] # 0.2 comes from checking invoker fv combo
         # once we get hero_winrate_tuple_list, we sort it and get display_num of it
         
         hero_counterrate_tuple_list_trunc = sorted(
