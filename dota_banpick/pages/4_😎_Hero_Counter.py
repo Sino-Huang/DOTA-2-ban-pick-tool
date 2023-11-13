@@ -15,14 +15,16 @@ suggest_num = 6
 
 
 def hero_pick_selectbox_to_counter_on_change():
-    heroname = st.session_state['hero_pick_selectbox_to_counter']
-    if heroname is None:
+    heronames = st.session_state['hero_pick_selectbox_to_counter']
+    if heronames is None or heronames == []:
         return
-    with_dict, counter_dict = compute_with_and_counter_heroes_for_each_pos(
-        heroname, suggest_num)
+    with_dict, counter_dict, bad_counter_dict = compute_with_and_counter_heroes_for_each_pos(
+        heronames, suggest_num)
     st.session_state['p4_target_hero_with_dict'] = with_dict
     st.session_state['p4_target_hero_counter_dict'] = counter_dict
-    st.session_state['p4_target_hero'] = heroname
+    st.session_state['p4_target_hero_bad_counter_dict'] = bad_counter_dict
+
+    st.session_state['p4_target_hero'] = heronames
 
 
 def get_online_image_urls(heronames):
@@ -43,19 +45,21 @@ def row_display_component(component_arg_list, width, show_compo_func):
             with cols[i]:
                 show_compo_func(*args)
 
+
 def display_table(title, pos_ind, table):
     annotated_text("Recommended heroes if you play ", (pos_description[pos_ind].split(
-                        " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
+        " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
     st.markdown(table_with_images(df=table,
-                                  url_columns=['Bad Against', 'Good With']),
+                                  url_columns=['CNTR Pick', 'Good With', "Avoid Pick"]),
                 unsafe_allow_html=True)
-    
+
     st.divider()
+
 
 if __name__ == "__main__":
     try:
         st.set_page_config(
-            layout="centered"
+            layout="wide"
         )
     except StreamlitAPIException:
         pass
@@ -69,36 +73,50 @@ if __name__ == "__main__":
         st.session_state['raw_df'] = get_hero_csv_data_raw()
 
     st.title("Know How to Matchup With a Hero")
-    st.selectbox(f"Hero",
-                 options=st.session_state['name_abbrev_dict_keys_list'],
-                 format_func=lambda x: st.session_state['name_abbrev_dict'][x],
-                 index=None,
-                 key=f"hero_pick_selectbox_to_counter",
-                 on_change=hero_pick_selectbox_to_counter_on_change,)
+    st.info("This can be seen as a simplified version of ban pick suggestions. ")
+    main_cols = st.columns(2)
+    with main_cols[0]:
+        st.multiselect(f"Hero",
+                    options=st.session_state['name_abbrev_dict_keys_list'],
+                    format_func=lambda x: st.session_state['name_abbrev_dict'][x],
+                    key=f"hero_pick_selectbox_to_counter",
+                    on_change=hero_pick_selectbox_to_counter_on_change,)
+    with main_cols[1]:
+        st.multiselect(f"What Pos You Play",
+                       options=["1", "2", "3", "4", "5"],
+                    key=f"player_pos_multiselect",
+                    on_change=hero_pick_selectbox_to_counter_on_change,)
 
     if 'p4_target_hero_with_dict' in st.session_state:
         st.subheader(f"{st.session_state['p4_target_hero']}")
-        tcol = st.columns([0.65, 0.35])
-        with tcol[0]:
-            st.image(get_online_image_urls(
-                [st.session_state['p4_target_hero']])[0])
-        with tcol[1]:
-            st.caption("Common Pos")
-            for pos_ind, pool in enumerate(default_hero_pools):
-                if st.session_state['p4_target_hero'] in pool:
-                    annotated_text((pos_description[pos_ind].split(
-                        " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
+        pos_cols = st.columns(10)
+        for pos_info_i, the_hero in enumerate(st.session_state['p4_target_hero']):
+            with pos_cols[pos_info_i]:
+                st.image(get_online_image_urls(
+                    [st.session_state['p4_target_hero'][pos_info_i]]), width=100)
+                for pos_ind, pool in enumerate(default_hero_pools):
+                        if the_hero in pool:
+                            annotated_text((pos_description[pos_ind].split(
+                                " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
+
         st.subheader("Match Up Stats")
         heroname = st.session_state['p4_target_hero']
         # st.info(f"请根据你的位置, 查看推荐英雄, 如果{heroname}是你的队友在玩, 你可以选择Good With一栏的英雄配合{heroname}, 如果{heroname}是敌人在玩, 你可以选择Bad Against一栏的英雄克制{heroname}")
-        st.info(f"Please check for recommended heroes based on your position. If {heroname} is on the opposing team, you can choose heroes listed in the 'Bad Against' column to counter {heroname}. If {heroname} is on your team, you can choose heroes listed in the 'Good With' column to complement {heroname}.")
-        
+        st.info((f"Please check for recommended heroes based on your position. "
+                 f"If the selected heroes are on the opposing team, you can choose heroes listed in the 'CNTR Pick' column to counter them."
+                 f"If the selected heroes are on your team, you can choose heroes listed in the 'Good With' column to complement them. "
+                 f"Avoid pick heroes listed in the 'Avoid Pick' column as they are countered by the selected heroes."))
+
         output_args = []
         for col_ind in range(5):
             position = col_ind+1
+            if st.session_state['player_pos_multiselect'] != []:
+                if str(position) not in st.session_state['player_pos_multiselect']:
+                    continue
             dataframe = {
-                "Bad Against": get_online_image_urls(st.session_state['p4_target_hero_counter_dict'][position]),
-                "Good With": get_online_image_urls(st.session_state['p4_target_hero_with_dict'][position])
+                "CNTR Pick": get_online_image_urls(st.session_state['p4_target_hero_counter_dict'][position]),
+                "Good With": get_online_image_urls(st.session_state['p4_target_hero_with_dict'][position]),
+                "Avoid Pick": get_online_image_urls(st.session_state['p4_target_hero_bad_counter_dict'][position]),
             }
             dataframe = pd.DataFrame(dataframe)
             output_args.append((f"Position {position}", col_ind, dataframe))

@@ -17,6 +17,7 @@ file that should have been included as part of this project.
 import copy
 from glob import glob
 import os
+from typing import List
 
 from natsort import natsorted
 from tqdm.auto import tqdm
@@ -138,8 +139,10 @@ def compute_bad_picks_for_each_pos(statenode: StateNode,
     return output_dict
 
 
-def compute_with_and_counter_heroes_for_each_pos(heroname: str,
+def compute_with_and_counter_heroes_for_each_pos(heronames: List[str],
                                    display_num=5):
+    """compute the with and counter heroes for each position
+    """
     # output structure : {pos: [bad_hero_ele,]}
     # give a list of heros that the opponent may counter you most
 
@@ -149,26 +152,41 @@ def compute_with_and_counter_heroes_for_each_pos(heroname: str,
     # calculate versus rate
     output_syne_dict = dict()  # {dota_position: [with_heros]}
     output_counter_dict = dict()  # {dota_position: [counter_heros]}
+    output_good_against_dict = dict()  # {dota_position: [good_against_heros]}
     
     for pos_ind, pos_hero_pool in enumerate(hero_pool_lst):
         # hero_counterrate_tuple_list = []  # [(hero, score)]
         # hero_withrate_tuple_list = []  # [(hero, score)]
-        
-        hero_counterrate_tuple_list = [(thero, counter_rate_matrix[heroname][thero]) for thero in pos_hero_pool if thero != heroname]
-        hero_synergyrate_tuple_list = [(thero, synergy_rate_matrix[heroname][thero] + (with_winrate_matrix[heroname][thero] -0.5)*0.2) for thero in pos_hero_pool if thero != heroname] # 0.2 comes from checking invoker fv combo
+        hero_counterrate_tuple_list = []
+        hero_synergyrate_tuple_list = []
+        for heroname in heronames:
+            hero_counterrate_tuple_list_temp = [(thero, counter_rate_matrix[heroname][thero]) for thero in pos_hero_pool if thero != heroname]
+            hero_synergyrate_tuple_list_temp = [(thero, synergy_rate_matrix[heroname][thero] + (with_winrate_matrix[heroname][thero] -0.5)*0.2) for thero in pos_hero_pool if thero != heroname] # 0.2 comes from checking invoker fv combo
+            hero_counterrate_tuple_list.extend(hero_counterrate_tuple_list_temp)
+            hero_synergyrate_tuple_list.extend(hero_synergyrate_tuple_list_temp)
+            
         # once we get hero_winrate_tuple_list, we sort it and get display_num of it
         
-        hero_counterrate_tuple_list_trunc = sorted(
-            hero_counterrate_tuple_list, key=lambda x: x[1])[:display_num]
-        hero_synergyrate_tuple_list_trunc = sorted(
+        hero_good_againstrate_tuple_list_trunc = list(dict.fromkeys([x[0] for x in sorted(
+            hero_counterrate_tuple_list, key=lambda x: x[1], reverse=True)]))[:display_num]
+        
+        hero_counterrate_tuple_list_trunc = list(dict.fromkeys([x[0] for x in sorted(
+            hero_counterrate_tuple_list, key=lambda x: x[1])]))
+        # remove countered heroes 
+        hero_counterrate_tuple_list_trunc = [x for x in hero_counterrate_tuple_list_trunc if x not in hero_good_againstrate_tuple_list_trunc][:display_num]
+        
+        hero_synergyrate_tuple_list_trunc = list(dict.fromkeys([x[0] for x in sorted(
             hero_synergyrate_tuple_list, key=lambda x: x[1], reverse=True
-        )[:display_num]
-        output_counter_dict[pos_ind+1] = [x[0]
-                                  for x in hero_counterrate_tuple_list_trunc]
-        output_syne_dict[pos_ind+1] = [x[0]
-                                  for x in hero_synergyrate_tuple_list_trunc]
+        )]))[:display_num]
+        
+        
+        
+        output_counter_dict[pos_ind+1] = hero_counterrate_tuple_list_trunc
+        output_syne_dict[pos_ind+1] = hero_synergyrate_tuple_list_trunc
+        
+        output_good_against_dict[pos_ind+1] = hero_good_againstrate_tuple_list_trunc
 
-    return output_syne_dict, output_counter_dict
+    return output_syne_dict, output_counter_dict, output_good_against_dict
 
 
 def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict, suggest_num = 5):
