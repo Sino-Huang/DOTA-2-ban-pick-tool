@@ -76,36 +76,24 @@ if __name__ == "__main__":
     st.info("This can be seen as a simplified version of ban pick suggestions. ")
     main_cols = st.columns(2)
     with main_cols[0]:
+        st.multiselect(f"What Pos You Play",
+                       options=["1", "2", "3", "4", "5"],
+                    key=f"player_pos_multiselect",
+                    on_change=hero_pick_selectbox_to_counter_on_change,)
+        
+    with main_cols[1]:
         st.multiselect(f"Hero",
                     options=st.session_state['name_abbrev_dict_keys_list'],
                     format_func=lambda x: st.session_state['name_abbrev_dict'][x],
                     key=f"hero_pick_selectbox_to_counter",
                     on_change=hero_pick_selectbox_to_counter_on_change,)
-    with main_cols[1]:
-        st.multiselect(f"What Pos You Play",
-                       options=["1", "2", "3", "4", "5"],
-                    key=f"player_pos_multiselect",
-                    on_change=hero_pick_selectbox_to_counter_on_change,)
 
     if 'p4_target_hero_with_dict' in st.session_state:
-        st.subheader(f"{st.session_state['p4_target_hero']}")
-        pos_cols = st.columns(10)
-        for pos_info_i, the_hero in enumerate(st.session_state['p4_target_hero']):
-            with pos_cols[pos_info_i]:
-                st.image(get_online_image_urls(
-                    [st.session_state['p4_target_hero'][pos_info_i]]), width=100)
-                for pos_ind, pool in enumerate(default_hero_pools):
-                        if the_hero in pool:
-                            annotated_text((pos_description[pos_ind].split(
-                                " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
 
         st.subheader("Match Up Stats")
         heroname = st.session_state['p4_target_hero']
         # st.info(f"请根据你的位置, 查看推荐英雄, 如果{heroname}是你的队友在玩, 你可以选择Good With一栏的英雄配合{heroname}, 如果{heroname}是敌人在玩, 你可以选择Bad Against一栏的英雄克制{heroname}")
-        st.info((f"Please check for recommended heroes based on your position. "
-                 f"If the selected heroes are on the opposing team, you can choose heroes listed in the 'CNTR Pick' column to counter them."
-                 f"If the selected heroes are on your team, you can choose heroes listed in the 'Good With' column to complement them. "
-                 f"Avoid pick heroes listed in the 'Avoid Pick' column as they are countered by the selected heroes."))
+        
 
         output_args = []
         for col_ind in range(5):
@@ -122,3 +110,18 @@ if __name__ == "__main__":
             output_args.append((f"Position {position}", col_ind, dataframe))
 
         row_display_component(output_args, 3, display_table)
+        st.info((f"Please check for recommended heroes based on your position. "
+                 f"If the selected heroes are on the opposing team, you can choose heroes listed in the 'CNTR Pick' column to counter them."
+                 f"If the selected heroes are on your team, you can choose heroes listed in the 'Good With' column to complement them. "
+                 f"Avoid pick heroes listed in the 'Avoid Pick' column as they are countered by the selected heroes."))
+        
+        st.subheader(f"Target Heroes")
+        pos_cols = st.columns(10)
+        for pos_info_i, the_hero in enumerate(st.session_state['p4_target_hero']):
+            with pos_cols[pos_info_i]:
+                st.image(get_online_image_urls(
+                    [st.session_state['p4_target_hero'][pos_info_i]]), width=100, caption=st.session_state['p4_target_hero'][pos_info_i])
+                for pos_ind, pool in enumerate(default_hero_pools):
+                        if the_hero in pool:
+                            annotated_text((pos_description[pos_ind].split(
+                                " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
