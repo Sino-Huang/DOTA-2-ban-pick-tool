@@ -41,12 +41,25 @@ def pos_card_on_click():
 if __name__ == "__main__":
 
     st.set_page_config(
-        page_title="DOTA 2 BP Tool",
+        page_title="DOTA2BanPickTool",
         page_icon="✨",
-        layout="wide"
+        layout="wide",
     )
     _ = load_alpha_beta_cache_dict()
-
+    st.header("DOTA2 BanPick Tool by Sino-CICI")
+    # write a general description about this web app
+    st.text("This is a web app for DOTA2 BanPick Tool, you can use it to get some drafting suggestions for DOTA2 games.")
+    st.text("""Legitimacy and Fair Play Clarification:
+No Cheating Involved:
+    Our tool is fundamentally different from real-time game-enhancing applications like Overwolf. It does not interact with the DOTA 2 game client or servers during gameplay nor does it parse player information in real-time.
+Purely a Drafting Aid:
+    This tool is designed to serve as a drafting practice tool. Its sole purpose is to assist players in understanding and strategizing around the drafting phase of the game. It simulates various drafting scenarios to help players make informed decisions on hero selections and bans based on predefined metrics and algorithms.
+No Real-Time Assistance:
+    The DOTA 2 Ban Pick Tool does not provide any real-time assistance, insights, or advantages during actual gameplay. It operates exclusively outside the game environment, thus preserving the game's competitive integrity.
+No Data Parsing:
+    Unlike some other tools, our application does not parse or analyze player data during game runtime. It strictly operates based on predefined hero pools and user inputs prior to engaging in a game.
+Privacy Respected:
+    We highly respect user privacy and game ethics. No personal or game data is accessed, collected, or shared through the use of this tool.""")
     st.markdown("""
 <style>
 p {
@@ -65,7 +78,6 @@ p {
     if "show_pos_hero_ind" not in st.session_state:
         st.session_state["show_pos_hero_ind"] = -1
 
-    st.title("DOTA2 BanPick Tool")
     st.warning(f"Last Update: {LAST_UPDATE}")
     card("Start Editing Your Hero Pool", text=("Provide your usual positions → Edit your hero pool → Begin to banpick"),
          url="/Edit_Hero_Pool", on_click=lambda: None,
