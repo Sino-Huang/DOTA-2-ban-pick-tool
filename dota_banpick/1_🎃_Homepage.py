@@ -10,7 +10,7 @@ import copy
 import pandas as pd
 import pickle
 from dota_banpick.config import DEPTH_LIMIT, LAST_UPDATE
-from dota_banpick.st_cache import load_alpha_beta_cache_dict, pos_description, get_hero_csv_data_filtered, get_image_data, get_pos_1_hero_list, get_pos_2_hero_list, get_pos_3_hero_list, get_pos_4_hero_list, get_pos_5_hero_list, get_position_colour_tags, get_position_default_imgspath
+from dota_banpick.st_cache import pos_description, get_hero_csv_data_filtered, get_image_data, get_pos_1_hero_list, get_pos_2_hero_list, get_pos_3_hero_list, get_pos_4_hero_list, get_pos_5_hero_list, get_position_colour_tags, get_position_default_imgspath
 from streamlit_option_menu import option_menu
 from streamlit_card import card
 from annotated_text import annotated_text
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         page_icon="✨",
         layout="wide",
     )
-    _ = load_alpha_beta_cache_dict()
+    # _ = load_alpha_beta_cache_dict()
     st.header("DOTA2 BanPick Tool by Sino-CICI")
     # write a general description about this web app
     st.text("This is a web app for DOTA2 BanPick Tool, you can use it to get some drafting suggestions for DOTA2 games.")

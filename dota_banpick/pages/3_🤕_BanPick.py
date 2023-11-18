@@ -16,7 +16,7 @@ from streamlit_extras.image_in_tables import table_with_images
 from dota_banpick.config import DEPTH_LIMIT, FIRST_ROUND_PICK_CHOICE, UNCOMMON_HEROES
 import pandas as pd
 from streamlit.errors import StreamlitAPIException
-from dota_banpick.st_cache import record_folder, get_heros, load_alpha_beta_cache_dict, pos_description, get_hero_csv_data_raw, get_name_abbrev_dict, get_hero_csv_data, get_image_data, load_cached_name_hero_pool_dict, load_default_hero_pools
+from dota_banpick.st_cache import record_folder, get_heros, pos_description, get_hero_csv_data_raw, get_name_abbrev_dict, get_hero_csv_data, get_image_data, load_cached_name_hero_pool_dict, load_default_hero_pools
 import subprocess
 from subprocess import PIPE
 import time
@@ -33,7 +33,8 @@ def pipe_alphabeta(*thein):
     # stdout_data = p.communicate(input=thein)[0]
     # output = pickle.loads(stdout_data)
     # normal version
-    ab_cache_dict = load_alpha_beta_cache_dict()
+    # ab_cache_dict = load_alpha_beta_cache_dict()
+    ab_cache_dict = None
     output = alphabeta(*thein, ab_cache_dict)
     end_time = time.time()
     st.toast(f"Process Time: {end_time - start_time:3f} sec.")
@@ -364,10 +365,12 @@ def ally_pick_select(select_key, ally_ind):
 
 def ready_to_bp_on_click():
     # save cache dict ab
-    ab_cache_dict = load_alpha_beta_cache_dict()
-    with open(os.path.join(record_folder, 'depth_limit_1_warmup_cache_dict.pkl'), 'wb') as f:
-        pickle.dump(dict(ab_cache_dict), f)
-        
+    # ab_cache_dict = load_alpha_beta_cache_dict()
+    ab_cache_dict = None
+    if ab_cache_dict is not None:
+        with open(os.path.join(record_folder, 'depth_limit_1_warmup_cache_dict.pkl'), 'wb') as f:
+            pickle.dump(dict(ab_cache_dict), f)
+            
     # ------  preparation phase suggestion ------
     st.session_state.ally_name_list = []
     for pos_ind, posname in enumerate(st.session_state['available_positions']):
