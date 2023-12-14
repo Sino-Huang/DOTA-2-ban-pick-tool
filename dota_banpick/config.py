@@ -54,7 +54,9 @@ lane_rate_dict_fp = os.path.join(
 with open(lane_rate_dict_fp, 'rb') as f:
     lane_rate_info_dict = pickle.load(f)
 
-LAST_UPDATE = "9 Nov 2023"
+with open(os.path.join(os.path.dirname(__file__), "update_time.txt"), 'r') as f:
+    LAST_UPDATE = f.read()
+ACTIVATE_SAVING_CACHE = False
 
 COUNTER_WEIGHT = 1.2 # increase if we want to focus more on countering the opponents rather than hero combo
                      # try 0.1 interval 
@@ -77,7 +79,6 @@ FIRST_ROUND_COUNTER_CHOICE = [
     [1, 3]
 ]
 PRUNE_WORST_HERO_NUM = 5
-ACTIVATE_SAVING_CACHE = False
 
 DEFAULT_PICK_SUGGEST_COUNTER_TEMPERATURE = 0.8
 POS_1_COUNTER_TEMPERATURE = [1.1,

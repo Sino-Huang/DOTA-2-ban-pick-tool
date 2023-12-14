@@ -16,7 +16,7 @@ from streamlit_extras.image_in_tables import table_with_images
 from dota_banpick.config import DEPTH_LIMIT, FIRST_ROUND_PICK_CHOICE, UNCOMMON_HEROES
 import pandas as pd
 from streamlit.errors import StreamlitAPIException
-from dota_banpick.st_cache import record_folder, get_heros, pos_description, get_hero_csv_data_raw, get_name_abbrev_dict, get_hero_csv_data, get_image_data, load_cached_name_hero_pool_dict, load_default_hero_pools
+from dota_banpick.st_cache import load_alpha_beta_cache_dict, record_folder, get_heros, pos_description, get_hero_csv_data_raw, get_name_abbrev_dict, get_hero_csv_data, get_image_data, load_cached_name_hero_pool_dict, load_default_hero_pools
 import subprocess
 from subprocess import PIPE
 import time
@@ -33,8 +33,8 @@ def pipe_alphabeta(*thein):
     # stdout_data = p.communicate(input=thein)[0]
     # output = pickle.loads(stdout_data)
     # normal version
-    # ab_cache_dict = load_alpha_beta_cache_dict()
-    ab_cache_dict = None
+    ab_cache_dict = load_alpha_beta_cache_dict()
+    # ab_cache_dict = None
     output = alphabeta(*thein, ab_cache_dict)
     end_time = time.time()
     st.toast(f"Process Time: {end_time - start_time:3f} sec.")
