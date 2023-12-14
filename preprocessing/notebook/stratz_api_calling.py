@@ -232,17 +232,33 @@ for heroind, id in enumerate(tqdm(ids)):
     lane_rate_info_dict[hname] = dict()
     url = f"https://stratz.com/heroes/{id}"
     lane_rate_info_dict[hname]['url'] = url
-    rs = requests.get(url)
-    tree = html.fromstring(rs.content) # read byte content
+
+    body="""
+{{
+  heroStats{{
+    stats(heroIds:[{cid}] bracketBasicIds:[LEGEND_ANCIENT, DIVINE_IMMORTAL] positionIds:[POSITION_1, POSITION_2, POSITION_3, POSITION_4, POSITION_5] groupByPosition:true){{
+      
+      matchCount
+    }}
+  }}
+}}
+""".format(cid=id)
+    headers= {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {token}'
+          }
+    response = requests.post(url=url, json={"query": body}, headers=headers)
+    # print("response status code: ", response.status_code)
+    if response.status_code != 200:
+        print(f"GG, not equal 200 for {id} {hname}")
+        break
+    output_dict = json.loads(response.content.decode())
+    lane_counts = [h['matchCount'] for h in output_dict['data']['heroStats']['stats']]
+    lane_pick_rates = [h/sum(lane_counts) for h in lane_counts]
+
     for lane_ind, lanen in enumerate(lane_names):
-        lane_xp = f'//span[contains(., "{lanen}")]/../../../../div[2]/div/div[1]'
-        lane_ele = tree.xpath(lane_xp)
-        if lane_ele:
-            lane_pick_rate = lane_xp[0].text_content()
-            lane_pick_rate_val = float(lane_pick_rate[:-1]) / 100.0
-            lane_rate_info_dict[hname][pick_rate_name[lane_ind]] = lane_pick_rate_val
-        else:
-            raise RuntimeError(f"{lanen} for {id} cannot Find!")
+        lane_rate_info_dict[hname][pick_rate_name[lane_ind]] = lane_pick_rates[lane_ind]
             
             
 
