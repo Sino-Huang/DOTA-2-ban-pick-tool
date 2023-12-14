@@ -248,7 +248,7 @@ for heroind, id in enumerate(tqdm(ids)):
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {token}'
           }
-    response = requests.post(url=url, json={"query": body}, headers=headers)
+    response = requests.post(url="https://api.stratz.com/graphql", json={"query": body}, headers=headers)
     # print("response status code: ", response.status_code)
     if response.status_code != 200:
         print(f"GG, not equal 200 for {id} {hname}")
