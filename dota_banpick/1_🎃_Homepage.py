@@ -10,16 +10,19 @@ import copy
 import pandas as pd
 import pickle
 from dota_banpick.config import DEPTH_LIMIT, LAST_UPDATE
-from dota_banpick.st_cache import pos_description, get_hero_csv_data_filtered, get_image_data, get_pos_1_hero_list, get_pos_2_hero_list, get_pos_3_hero_list, get_pos_4_hero_list, get_pos_5_hero_list, get_position_colour_tags, get_position_default_imgspath
+from dota_banpick.heuristic import compute_with_and_counter_heroes_for_each_pos
+from dota_banpick.st_cache import get_hero_csv_data_raw, get_online_image_urls, hero_counter_row_display_component, pos_description, load_today_hero_winrate_dict, get_hero_csv_data_filtered, get_image_data, get_pos_1_hero_list, get_pos_2_hero_list, get_pos_3_hero_list, get_pos_4_hero_list, get_pos_5_hero_list, get_position_colour_tags, get_position_default_imgspath
 from streamlit_option_menu import option_menu
 from streamlit_card import card
 from annotated_text import annotated_text
+from streamlit_extras.image_in_tables import table_with_images
+import numpy as np
 
 
-image_width = 11
+image_width = 6
 
 
-def row_display_component(component_arg_list, width, ):
+def row_display_component(component_arg_list, width, position):
     chunks_width = []
     for i in range(0, len(component_arg_list), width):
         chunks_width.append(component_arg_list[i: i+width])
@@ -27,12 +30,31 @@ def row_display_component(component_arg_list, width, ):
         cols = st.columns(width)
         for i, args in enumerate(chunk):
             with cols[i]:
-                show_item_component(*args)
+                show_item_component(*args, position)
 
-
-def show_item_component(img, name):
-    st.image(img, caption=name, use_column_width="always")
-
+def show_item_component(img, name, winrate, position, suggest_num = 3):
+    st.image(img, caption=name+f"\nwr:{winrate}", use_column_width="always")
+    if 'if_show_counter' in st.session_state:
+        if st.session_state['if_show_counter']:
+            _, counter_dict, _ = compute_with_and_counter_heroes_for_each_pos(
+                [name], suggest_num)
+            if position == 1:
+                targ_positions = [[3,4], [2,1]]
+            elif position == 2:
+                targ_positions = [[2,3], [1,4]]
+            elif position == 3:
+                targ_positions = [[1,5], [2,4]]
+            elif position == 4:
+                targ_positions = [[1,2], [3,4]]
+            elif position == 5:
+                targ_positions = [[1,2], [3,4]]
+            for tar_pos_chunk in targ_positions:
+                dataframe = {
+                            f"Pos {targ_position} CNTR": counter_dict[targ_position] for targ_position in tar_pos_chunk
+                            }
+                dataframe = pd.DataFrame(dataframe)
+                st.dataframe(dataframe, hide_index=True, use_container_width=True)
+    
 
 def pos_card_on_click():
     st.session_state.card_click_count += 1
@@ -77,6 +99,13 @@ p {
 
     if "show_pos_hero_ind" not in st.session_state:
         st.session_state["show_pos_hero_ind"] = -1
+        
+    if "today_winrate_dict" not in st.session_state:
+        st.session_state["today_winrate_dict"] = load_today_hero_winrate_dict()
+        
+    if 'raw_df' not in st.session_state:
+        st.session_state['raw_df'] = get_hero_csv_data_raw()
+        
 
     st.warning(f"Last Update: {LAST_UPDATE}")
     card("Start Editing Your Hero Pool", text=("Provide your usual positions → Edit your hero pool → Begin to banpick"),
@@ -91,7 +120,8 @@ p {
                  "margin": "20px"
              },
     })
-    st.header("Common Hero Pools")
+    st.header("Hero Pools with Live Stats!")
+    st.toggle("Show Counter Heroes", key="if_show_counter")
 
     card_cols = st.columns(5, gap="small")
 
@@ -141,8 +171,18 @@ p {
         annotated_text((pos_description[st.session_state["show_pos_hero_ind"]].split(
             " ")[-1], f"pos {st.session_state['show_pos_hero_ind'] + 1}", get_position_colour_tags()[st.session_state['show_pos_hero_ind']]))
 
-        imgfilenames = list(tdf['Image filename'].str.strip())
+        # sort the heroes by winrate
         heronames = list(tdf['Name'].str.strip())
+        winrates = [st.session_state["today_winrate_dict"][name]['winrate'] for name in heronames]
+        index_sorted = np.argsort(winrates)[::-1]
+        winrates = np.array(winrates)[index_sorted]
+        # round 2 decimal places
+        winrates = [np.round(wr, 2) for wr in winrates]
+        
+        tdf = tdf.iloc[index_sorted]        
+        heronames = list(tdf['Name'].str.strip())
+        imgfilenames = list(tdf['Image filename'].str.strip())
+
         img_array = get_image_data(imgfilenames)
-        args_list = list(zip(img_array, heronames))
-        row_display_component(args_list, image_width)
+        args_list = list(zip(img_array, heronames, winrates))
+        row_display_component(args_list, image_width, st.session_state['show_pos_hero_ind'] + 1)

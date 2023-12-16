@@ -4,7 +4,7 @@ import os
 import pickle
 from PIL import Image
 
-from dota_banpick.st_cache import get_hero_csv_data, get_hero_csv_data_raw, get_image_data, get_name_abbrev_dict, get_position_colour_tags, pos_description
+from dota_banpick.st_cache import hero_counter_display_table, hero_counter_row_display_component, get_online_image_urls, get_hero_csv_data, get_hero_csv_data_raw, get_image_data, get_name_abbrev_dict, get_position_colour_tags, pos_description
 from dota_banpick.heuristic import compute_with_and_counter_heroes_for_each_pos
 from streamlit_extras.image_in_tables import table_with_images
 from annotated_text import annotated_text
@@ -27,33 +27,7 @@ def hero_pick_selectbox_to_counter_on_change():
     st.session_state['p4_target_hero'] = heronames
 
 
-def get_online_image_urls(heronames):
-    imgfilenames = list(
-        st.session_state['raw_df']['Image filename'].loc[list(heronames)].str.strip())
-    lst = [
-        f'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/{x}.png' for x in imgfilenames]
-    return lst
 
-
-def row_display_component(component_arg_list, width, show_compo_func):
-    chunks_width = []
-    for i in range(0, len(component_arg_list), width):
-        chunks_width.append(component_arg_list[i: i+width])
-    for chunk in chunks_width:
-        cols = st.columns(width)
-        for i, args in enumerate(chunk):
-            with cols[i]:
-                show_compo_func(*args)
-
-
-def display_table(title, pos_ind, table):
-    annotated_text("Recommended heroes if you play ", (pos_description[pos_ind].split(
-        " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
-    st.markdown(table_with_images(df=table,
-                                  url_columns=['CNTR Pick', 'Good With', "Avoid Pick"]),
-                unsafe_allow_html=True)
-
-    st.divider()
 
 
 if __name__ == "__main__":
@@ -109,7 +83,7 @@ if __name__ == "__main__":
             dataframe = pd.DataFrame(dataframe)
             output_args.append((f"Position {position}", col_ind, dataframe))
 
-        row_display_component(output_args, 3, display_table)
+        hero_counter_row_display_component(output_args, 3, hero_counter_display_table)
         st.info((f"Please check for recommended heroes based on your position. "
                  f"If the selected heroes are on the opposing team, you can choose heroes listed in the 'CNTR Pick' column to counter them."
                  f"If the selected heroes are on your team, you can choose heroes listed in the 'Good With' column to complement them. "

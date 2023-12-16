@@ -10,7 +10,8 @@ import pandas as pd
 import pickle
 from dota_banpick.config import DEPTH_LIMIT
 from PIL import Image
-
+from streamlit_extras.image_in_tables import table_with_images
+from annotated_text import annotated_text
 
 record_folder = os.path.join(os.path.dirname(__file__), "data/records")
 
@@ -153,6 +154,12 @@ def load_default_hero_pools():
             default_hero_pools.append(eval(hp_text))
     return default_hero_pools  # structure [[hero_name]]
 
+@st.cache_data
+def load_today_hero_winrate_dict():
+    today_hero_winrate_dict_fp = os.path.join(record_folder, "hero_winrate_info_dict.pkl")
+    with open(today_hero_winrate_dict_fp, 'rb') as f:
+        d = pickle.load(f)
+    return d
 
 def load_cached_name_hero_pool_dict(): # no more cache because we want different users to use
     # singleton_manager = Manager()
@@ -174,3 +181,31 @@ def load_alpha_beta_cache_dict():
     else:
         cache_dict = singleton_alpha_beta_manager.dict()
         return cache_dict
+    
+    
+def get_online_image_urls(heronames):
+    imgfilenames = list(
+        st.session_state['raw_df']['Image filename'].loc[list(heronames)].str.strip())
+    lst = [
+        f'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/{x}.png' for x in imgfilenames]
+    return lst
+
+def hero_counter_row_display_component(component_arg_list, width, show_compo_func):
+    chunks_width = []
+    for i in range(0, len(component_arg_list), width):
+        chunks_width.append(component_arg_list[i: i+width])
+    for chunk in chunks_width:
+        cols = st.columns(width)
+        for i, args in enumerate(chunk):
+            with cols[i]:
+                show_compo_func(*args)
+
+
+def hero_counter_display_table(title, pos_ind, table):
+    annotated_text("Recommended heroes if you play ", (pos_description[pos_ind].split(
+        " ")[-1], f"pos {pos_ind + 1}", get_position_colour_tags()[pos_ind]))
+    st.markdown(table_with_images(df=table,
+                                  url_columns=['CNTR Pick', 'Good With', "Avoid Pick"]),
+                unsafe_allow_html=True)
+
+    st.divider()

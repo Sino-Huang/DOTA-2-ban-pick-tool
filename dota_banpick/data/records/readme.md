@@ -16,6 +16,10 @@ dict[hero_name] = {
 ```
 dict[hero_info_url] = hero_name
 ```
+## Hero winrate info dict
+```
+dict[heroname] = {'url':val, 'winrate': val}
+```
 
 ## winrate_matrix
 ```

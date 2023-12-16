@@ -251,7 +251,7 @@ for heroind, id in enumerate(tqdm(ids)):
     response = requests.post(url="https://api.stratz.com/graphql", json={"query": body}, headers=headers)
     # print("response status code: ", response.status_code)
     if response.status_code != 200:
-        print(f"GG, not equal 200 for {id} {hname}")
+        print(f"GG, LANE INFO not equal 200 for {id} {hname}")
         break
     output_dict = json.loads(response.content.decode())
     lane_counts = [h['matchCount'] for h in output_dict['data']['heroStats']['stats']]
@@ -270,6 +270,56 @@ with open("../records/lane_rate_info_dict.pkl", 'wb') as f:
 # save them to deployment env 
 with open("../../dota_banpick/data/records/lane_rate_info_dict.pkl", 'wb') as f:
     pickle.dump(lane_rate_info_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+# %% [markdown]
+# ## Everyday Winrate
+
+# %%
+hero_winrate_dict = dict()
+ids = [h['id'] for h in id_to_name_dict_json['data']['constants']['heroes']]
+hero_names = [h['displayName'] for h in id_to_name_dict_json['data']['constants']['heroes']]
+for heroind, id in enumerate(tqdm(ids)):
+    hname = hero_names[heroind]
+    hero_winrate_dict[hname] = dict()
+    url = f"https://stratz.com/heroes/{id}"
+    hero_winrate_dict[hname]['url'] = url
+    body="""
+{{
+  heroStats {{
+    winHour(heroIds: {cid} bracketIds: [IMMORTAL, DIVINE, ANCIENT, LEGEND, ARCHON]){{
+      hour
+      winCount
+      matchCount
+    }}
+  }}
+}}
+""".format(cid=id)
+    headers= {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {token}'
+          }
+    response = requests.post(url="https://api.stratz.com/graphql", json={"query": body}, headers=headers)
+    # print("response status code: ", response.status_code)
+    if response.status_code != 200:
+        print(f"GG, EVERYDAY WINRATE not equal 200 for {id} {hname}")
+        break
+    output_dict = json.loads(response.content.decode())
+    win_counts = sum([h['winCount'] for h in output_dict['data']['heroStats']['winHour']])
+    match_counts = sum([h['matchCount'] for h in output_dict['data']['heroStats']['winHour']])
+    hero_winrate_dict[hname]['winrate'] = win_counts / match_counts
+
+# sort the winrate dict
+hero_winrate_dict = dict(sorted(hero_winrate_dict.items(), key=lambda item: item[1]['winrate'], reverse=True))
+
+# %%
+# save them 
+with open("../records/hero_winrate_info_dict.pkl", 'wb') as f:
+    pickle.dump(hero_winrate_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+# save them to deployment env 
+with open("../../dota_banpick/data/records/hero_winrate_info_dict.pkl", 'wb') as f:
+    pickle.dump(hero_winrate_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 # %%
 # run the server 
