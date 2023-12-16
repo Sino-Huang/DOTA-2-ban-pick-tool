@@ -14,7 +14,7 @@ dependencies = [
     "requests","pandas","scipy","numpy", "undetected-chromedriver",
     "tqdm","ipywidgets", "hydra-core", 
     "jupyterlab","selenium","django", "natsort", "Pillow",  "watchdog",
-    "streamlit", "streamlit-option-menu", "streamlit-extras"
+    "streamlit", "streamlit-option-menu", "streamlit-extras", "streamlit_js_eval"
 ]
 
 [project.optional-dependencies]

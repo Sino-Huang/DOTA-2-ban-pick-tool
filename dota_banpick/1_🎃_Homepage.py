@@ -17,10 +17,12 @@ from streamlit_card import card
 from annotated_text import annotated_text
 from streamlit_extras.image_in_tables import table_with_images
 import numpy as np
+from streamlit_js_eval import streamlit_js_eval
 
-
-normal_image_width = 5
-show_cntr_image_width = 1
+normal_image_width_mobile = 5
+show_cntr_image_width_mobile = 1
+normal_image_width_pc = 11
+show_cntr_image_width_pc = 3
 
 def row_display_component(component_arg_list, width, position):
     chunks_width = []
@@ -33,7 +35,14 @@ def row_display_component(component_arg_list, width, position):
                 show_item_component(*args, position)
 
 def show_item_component(img, name, winrate, position, suggest_num = 3):
-    st.image(img, caption=name+f"\nwr:{winrate}", use_column_width="always")
+    if st.session_state['if_show_counter']:
+        captionname = f"wr:{winrate}"
+    else:
+        captionname = name+f" wr:{winrate}"
+    if st.session_state['screen_width'] < 800:
+        st.image(img, caption=captionname, use_column_width="always")
+    else:
+        st.image(img, caption=captionname, width=100)
     if 'if_show_counter' in st.session_state:
         if st.session_state['if_show_counter']:
             _, counter_dict, _ = compute_with_and_counter_heroes_for_each_pos(
@@ -52,6 +61,7 @@ def show_item_component(img, name, winrate, position, suggest_num = 3):
                         f"Pos {targ_position} CNTR": get_online_image_urls(counter_dict[targ_position]) for targ_position in targ_positions
                         }
             dataframe = pd.DataFrame(dataframe)
+            st.caption(f"Counters for {name}")
             st.markdown(table_with_images(df=dataframe,
                                           url_columns=[f"Pos {targ_position} CNTR" for targ_position in targ_positions],),
                         unsafe_allow_html=True)
@@ -92,15 +102,6 @@ p {
 </style>
 """, unsafe_allow_html=True)
 
-    st.write('''<style>
-
-[data-testid="column"] {
-    width: calc(20.0% - 1rem) !important;
-    flex: 1 1 calc(20.0% - 1rem) !important;
-    min-width: calc(20.0% - 1rem) !important;
-}
-</style>''', unsafe_allow_html=True)
-
     if "posoption_menu" not in st.session_state:
         st.session_state["posoption_menu"] = pos_description[0]
 
@@ -116,6 +117,18 @@ p {
     if 'raw_df' not in st.session_state:
         st.session_state['raw_df'] = get_hero_csv_data_raw()
         
+    if "screen_width" not in st.session_state:
+        st.session_state["screen_width"] = int(streamlit_js_eval(js_expressions='screen.width', key = 'SCR'))
+        
+    if st.session_state["screen_width"] < 800:
+        st.write('''<style>
+
+[data-testid="column"] {
+    width: calc(20.0% - 1rem) !important;
+    flex: 1 1 calc(20.0% - 1rem) !important;
+    min-width: calc(20.0% - 1rem) !important;
+}
+</style>''', unsafe_allow_html=True)
 
     st.warning(f"Last Update: {LAST_UPDATE}")
     card("Start Editing Your Hero Pool", text=("Provide your usual positions → Edit your hero pool → Begin to banpick"),
@@ -195,7 +208,13 @@ p {
 
         img_array = get_image_data(imgfilenames)
         args_list = list(zip(img_array, heronames, winrates))
-        if st.session_state['if_show_counter']:
-            row_display_component(args_list, show_cntr_image_width, st.session_state['show_pos_hero_ind'] + 1)
+        if st.session_state['screen_width'] < 800:
+            if st.session_state['if_show_counter']:
+                row_display_component(args_list, show_cntr_image_width_mobile, st.session_state['show_pos_hero_ind'] + 1)
+            else:
+                row_display_component(args_list, normal_image_width_mobile, st.session_state['show_pos_hero_ind'] + 1)
         else:
-            row_display_component(args_list, normal_image_width, st.session_state['show_pos_hero_ind'] + 1)
+            if st.session_state['if_show_counter']:
+                row_display_component(args_list, show_cntr_image_width_pc, st.session_state['show_pos_hero_ind'] + 1)
+            else:
+                row_display_component(args_list, normal_image_width_pc, st.session_state['show_pos_hero_ind'] + 1)
