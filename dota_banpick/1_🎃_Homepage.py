@@ -19,8 +19,8 @@ from streamlit_extras.image_in_tables import table_with_images
 import numpy as np
 
 
-image_width = 6
-
+normal_image_width = 5
+show_cntr_image_width = 1
 
 def row_display_component(component_arg_list, width, position):
     chunks_width = []
@@ -39,22 +39,24 @@ def show_item_component(img, name, winrate, position, suggest_num = 3):
             _, counter_dict, _ = compute_with_and_counter_heroes_for_each_pos(
                 [name], suggest_num)
             if position == 1:
-                targ_positions = [[3,4], [2,1]]
+                targ_positions = [3,4,2,1]
             elif position == 2:
-                targ_positions = [[2,3], [1,4]]
+                targ_positions = [2,3,1,4]
             elif position == 3:
-                targ_positions = [[1,5], [2,4]]
+                targ_positions = [1,5,2,4]
             elif position == 4:
-                targ_positions = [[1,2], [3,4]]
+                targ_positions = [1,2,3,4]
             elif position == 5:
-                targ_positions = [[1,2], [3,4]]
-            for tar_pos_chunk in targ_positions:
-                dataframe = {
-                            f"Pos {targ_position} CNTR": counter_dict[targ_position] for targ_position in tar_pos_chunk
-                            }
-                dataframe = pd.DataFrame(dataframe)
-                st.dataframe(dataframe, hide_index=True, use_container_width=True)
-    
+                targ_positions = [1,2,3,4]
+            dataframe = {
+                        f"Pos {targ_position} CNTR": get_online_image_urls(counter_dict[targ_position]) for targ_position in targ_positions
+                        }
+            dataframe = pd.DataFrame(dataframe)
+            st.markdown(table_with_images(df=dataframe,
+                                          url_columns=[f"Pos {targ_position} CNTR" for targ_position in targ_positions],),
+                        unsafe_allow_html=True)
+            st.divider()
+
 
 def pos_card_on_click():
     st.session_state.card_click_count += 1
@@ -63,14 +65,14 @@ def pos_card_on_click():
 if __name__ == "__main__":
 
     st.set_page_config(
-        page_title="DOTA2BanPickTool",
+        page_title="DOTA2 Ban Pick Tool",
         page_icon="✨",
         layout="wide",
     )
     # _ = load_alpha_beta_cache_dict()
-    st.header("DOTA2 BanPick Tool by Sino-CICI")
+    st.header("DOTA2 Ban Pick Tool by Sino-CICI")
     # write a general description about this web app
-    st.text("This is a web app for DOTA2 BanPick Tool, you can use it to get some drafting suggestions for DOTA2 games.")
+    st.text("This is a web app for DOTA2 Ban Pick Tool, you can use it to get some drafting suggestions for DOTA2 games.")
     st.text("""Legitimacy and Fair Play Clarification:
 No Cheating Involved:
     Our tool is fundamentally different from real-time game-enhancing applications like Overwolf. It does not interact with the DOTA 2 game client or servers during gameplay nor does it parse player information in real-time.
@@ -90,6 +92,14 @@ p {
 </style>
 """, unsafe_allow_html=True)
 
+    st.write('''<style>
+
+[data-testid="column"] {
+    width: calc(20.0% - 1rem) !important;
+    flex: 1 1 calc(20.0% - 1rem) !important;
+    min-width: calc(20.0% - 1rem) !important;
+}
+</style>''', unsafe_allow_html=True)
 
     if "posoption_menu" not in st.session_state:
         st.session_state["posoption_menu"] = pos_description[0]
@@ -137,9 +147,9 @@ p {
                 "card": {
                     "width": "100%",
                     "height": "120px",
-                    "border-radius": "30px",
-                    "box-shadow": "0 0 10px rgba(0,0,0,0.5)",
-                    "margin": "20px"
+                    "border-radius": "5px",
+                    "box-shadow": "0 0 1px rgba(0,0,0,0.5)",
+                    "margin": "0px"
                 }
             }, key=f"pos_card_{ind}_{st.session_state.card_click_count}", on_click=pos_card_on_click)
 
@@ -185,4 +195,7 @@ p {
 
         img_array = get_image_data(imgfilenames)
         args_list = list(zip(img_array, heronames, winrates))
-        row_display_component(args_list, image_width, st.session_state['show_pos_hero_ind'] + 1)
+        if st.session_state['if_show_counter']:
+            row_display_component(args_list, show_cntr_image_width, st.session_state['show_pos_hero_ind'] + 1)
+        else:
+            row_display_component(args_list, normal_image_width, st.session_state['show_pos_hero_ind'] + 1)
