@@ -65,7 +65,8 @@ def show_item_component(img, name, winrate, position, suggest_num = 5):
             with_list = [n for n in with_list if n in with_filter_list][:suggest_num]
             versus_list = list(st.session_state["hero_lanewin_versus_dict"][name].keys())
             versus_list = [n for n in versus_list if n in versus_filter_list][:suggest_num]
-            caption_str = f"Win Lane Adv for {name}"
+            caption_str = f" Win Lane Adv for {name} "
+            caption_str = '{:_<28}'.format(caption_str)
             if len(with_list) == suggest_num and position != 2:
                 dataframe = {
                             f"CNTR": get_online_image_urls(versus_list),
