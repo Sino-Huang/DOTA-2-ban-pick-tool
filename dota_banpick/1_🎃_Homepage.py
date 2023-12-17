@@ -40,53 +40,94 @@ def show_item_component(img, name, winrate, position, suggest_num = 5):
     else:
         captionname = name+f" wr:{winrate}"
     if st.session_state['screen_width'] < 800:
-        st.image(img, caption=captionname, use_column_width="always")
+        st.image(img, caption=captionname, width=80)
     else:
         st.image(img, caption=captionname, width=100)
+        
     if 'if_show_counter' in st.session_state:
-        if st.session_state['if_show_counter']:
+        if st.session_state['if_show_counter'] in ["Win Lane", "Win Game"]:
             if position == 1:
                 versus_filter_list = get_pos_3_hero_list() + get_pos_4_hero_list()
                 with_filter_list = get_pos_5_hero_list()
+                with_pos = 5 
+                versus_poses = [3,4]
             elif position == 2:
                 versus_filter_list = get_pos_2_hero_list()
                 with_filter_list = [] # no with for pos 2
+                with_pos = -1 
+                versus_poses = [2]
             elif position == 3:
                 versus_filter_list = get_pos_1_hero_list() + get_pos_5_hero_list()
                 with_filter_list = get_pos_4_hero_list()
+                with_pos = 4
+                versus_poses = [1,5]
             elif position == 4:
                 versus_filter_list = get_pos_1_hero_list() + get_pos_5_hero_list()
                 with_filter_list = get_pos_3_hero_list()
+                with_pos = 3
+                versus_poses = [1,5]
+                
             elif position == 5:
                 versus_filter_list = get_pos_3_hero_list() + get_pos_4_hero_list()
                 with_filter_list = get_pos_1_hero_list()
+                with_pos = 1
+                versus_poses = [3,4]
                 
-            with_list = list(st.session_state["hero_lanewin_with_dict"][name].keys())
-            with_list = [n for n in with_list if n in with_filter_list][:suggest_num]
-            versus_list = list(st.session_state["hero_lanewin_versus_dict"][name].keys())
-            versus_list = [n for n in versus_list if n in versus_filter_list][:suggest_num]
-            caption_str = f" Win Lane Adv for {name} "
+            if st.session_state['if_show_counter'] == "Win Lane":
+                with_list = list(st.session_state["hero_lanewin_with_dict"][name].keys())
+                with_list = [n for n in with_list if n in with_filter_list][:suggest_num]
+                versus_list = list(st.session_state["hero_lanewin_versus_dict"][name].keys())
+                versus_list = [n for n in versus_list if n in versus_filter_list][:suggest_num]
+                caption_str = f" Win Lane Adv for {name} "
+                
+            elif st.session_state['if_show_counter'] == "Win Game":
+                with_dict, counter_dict, bad_counter_dict = compute_with_and_counter_heroes_for_each_pos(
+                    [name], suggest_num)
+                if with_pos == -1:
+                    with_list = []
+                else:
+                    with_list = with_dict[with_pos]
+                versus_pos_len = len(versus_poses)
+                first_ele_size = suggest_num // versus_pos_len + suggest_num % versus_pos_len
+                other_ele_size = suggest_num // versus_pos_len
+                versus_list = []
+                for i, pos in enumerate(versus_poses):
+                    if i == 0:
+                        versus_list += counter_dict[pos][:first_ele_size]
+                    else:
+                        versus_list += counter_dict[pos][:other_ele_size]
+                
+                caption_str = f" Win Game Adv for {name} "
             caption_str = '{:_<28}'.format(caption_str)
             if len(with_list) == suggest_num and position != 2:
                 dataframe = {
                             f"CNTR": get_online_image_urls(versus_list),
                             f"WITH": get_online_image_urls(with_list),
                             }
+                # dataframe = {
+                #             f"CNTR": versus_list,
+                #             f"WITH": with_list,
+                #             }
                 dataframe = pd.DataFrame(dataframe)
                 st.caption(caption_str)
                 st.markdown(table_with_images(df=dataframe,
                                             url_columns=["CNTR", "WITH"],),
                             unsafe_allow_html=True)
+                # st.dataframe(dataframe, use_container_width=True, hide_index=True)
                 st.divider()
             else:
                 dataframe = {
                             f"CNTR": get_online_image_urls(versus_list),
                             }
+                # dataframe = {
+                #             f"CNTR": versus_list,
+                #             }
                 dataframe = pd.DataFrame(dataframe)
                 st.caption(caption_str)
                 st.markdown(table_with_images(df=dataframe,
                                             url_columns=["CNTR",],),
                             unsafe_allow_html=True)
+                # st.dataframe(dataframe, use_container_width=True, hide_index=True)
                 st.divider()
 
 
@@ -170,7 +211,7 @@ p {
     })
     st.header("Hero Pools with Live Stats and Win Lane Advice!")
     st.warning("If you are looking for Win Game advice, please check out the Hero Counter page.")
-    st.toggle("Show Win Lane Advices", key="if_show_counter")
+    st.radio("What's your preference for hero advice?", ["Win Lane", "Win Game", "Hide"], captions=["You may not win the game in the end but you can smoothly survive the early game and let others to carry you.", "Calm down and be patient, you can win the game!", "Hide for saving space."], key="if_show_counter", index=2)
 
     card_cols = st.columns(5, gap="small")
 
@@ -235,12 +276,12 @@ p {
         img_array = get_image_data(imgfilenames)
         args_list = list(zip(img_array, heronames, winrates))
         if st.session_state['screen_width'] < 800:
-            if st.session_state['if_show_counter']:
+            if st.session_state['if_show_counter'] in ["Win Lane", "Win Game"]:
                 row_display_component(args_list, show_cntr_image_width_mobile, st.session_state['show_pos_hero_ind'] + 1)
             else:
                 row_display_component(args_list, normal_image_width_mobile, st.session_state['show_pos_hero_ind'] + 1)
         else:
-            if st.session_state['if_show_counter']:
+            if st.session_state['if_show_counter'] in ["Win Lane", "Win Game"]:
                 row_display_component(args_list, show_cntr_image_width_pc, st.session_state['show_pos_hero_ind'] + 1)
             else:
                 row_display_component(args_list, normal_image_width_pc, st.session_state['show_pos_hero_ind'] + 1)
