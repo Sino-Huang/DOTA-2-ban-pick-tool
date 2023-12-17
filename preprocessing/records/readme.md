@@ -22,6 +22,11 @@ dict[hero_info_url] = hero_name
 dict[hero_name][opponent_hero_name] = num
 ```
 
+## lanwin_dict
+```
+dict[hero_name][targ_hero_name] = score
+```
+
 ## default pos hero pool
 - these are in plain text format
 

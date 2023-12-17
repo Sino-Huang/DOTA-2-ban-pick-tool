@@ -16,14 +16,15 @@ dict[hero_name] = {
 ```
 dict[hero_info_url] = hero_name
 ```
-## Hero winrate info dict
-```
-dict[heroname] = {'url':val, 'winrate': val}
-```
 
 ## winrate_matrix
 ```
 dict[hero_name][opponent_hero_name] = num
+```
+
+## lanwin_dict
+```
+dict[hero_name][targ_hero_name] = score
 ```
 
 ## default pos hero pool
