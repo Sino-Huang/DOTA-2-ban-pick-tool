@@ -21,7 +21,7 @@ from streamlit_js_eval import streamlit_js_eval
 
 normal_image_width_mobile = 2
 show_cntr_image_width_mobile = 2
-normal_image_width_pc = 11
+normal_image_width_pc = 6
 show_cntr_image_width_pc = 4
 
 def row_display_component(component_arg_list, width, position):
