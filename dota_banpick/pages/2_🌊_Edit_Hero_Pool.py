@@ -10,7 +10,7 @@ import pickle
 from PIL import Image
 
 from dota_banpick.st_cache import get_hero_csv_data_filtered, pos_description, get_hero_csv_data, get_heros, get_image_data, load_cached_name_hero_pool_dict, load_default_hero_pools
-
+from streamlit_js_eval import streamlit_js_eval
 
 
 def row_display_component(component_arg_list, width):
@@ -136,6 +136,19 @@ if __name__ == "__main__":
         
     if "display_stats_flag" not in st.session_state:
         st.session_state['display_stats_flag'] = False
+        
+    if "screen_width" not in st.session_state:
+        st.session_state["screen_width"] = int(streamlit_js_eval(js_expressions='screen.width', key = 'SCR'))
+        
+    if st.session_state["screen_width"] < 800:
+        st.write('''<style>
+
+[data-testid="column"] {
+    width: calc(33.3333% - 1rem) !important;
+    flex: 1 1 calc(33.3333% - 1rem) !important;
+    min-width: calc(33.3333% - 1rem) !important;
+}
+</style>''', unsafe_allow_html=True)
 
     st.markdown("""
     <style>
