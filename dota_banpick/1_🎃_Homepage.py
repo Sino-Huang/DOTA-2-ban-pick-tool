@@ -11,7 +11,7 @@ import pandas as pd
 import pickle
 from dota_banpick.config import DEPTH_LIMIT, LAST_UPDATE
 from dota_banpick.heuristic import compute_with_and_counter_heroes_for_each_pos
-from dota_banpick.st_cache import get_hero_csv_data_raw, get_online_image_urls, hero_counter_row_display_component, pos_description, load_today_hero_winrate_dict, get_hero_csv_data_filtered, get_image_data, get_pos_1_hero_list, get_pos_2_hero_list, get_pos_3_hero_list, get_pos_4_hero_list, get_pos_5_hero_list, get_position_colour_tags, get_position_default_imgspath
+from dota_banpick.st_cache import get_hero_csv_data_raw, get_online_image_urls, hero_counter_row_display_component, load_winlane_hero_dict, pos_description, load_today_hero_winrate_dict, get_hero_csv_data_filtered, get_image_data, get_pos_1_hero_list, get_pos_2_hero_list, get_pos_3_hero_list, get_pos_4_hero_list, get_pos_5_hero_list, get_position_colour_tags, get_position_default_imgspath
 from streamlit_option_menu import option_menu
 from streamlit_card import card
 from annotated_text import annotated_text
@@ -20,9 +20,9 @@ import numpy as np
 from streamlit_js_eval import streamlit_js_eval
 
 normal_image_width_mobile = 5
-show_cntr_image_width_mobile = 1
+show_cntr_image_width_mobile = 2
 normal_image_width_pc = 11
-show_cntr_image_width_pc = 3
+show_cntr_image_width_pc = 4
 
 def row_display_component(component_arg_list, width, position):
     chunks_width = []
@@ -34,7 +34,7 @@ def row_display_component(component_arg_list, width, position):
             with cols[i]:
                 show_item_component(*args, position)
 
-def show_item_component(img, name, winrate, position, suggest_num = 3):
+def show_item_component(img, name, winrate, position, suggest_num = 5):
     if st.session_state['if_show_counter']:
         captionname = f"wr:{winrate}"
     else:
@@ -45,27 +45,48 @@ def show_item_component(img, name, winrate, position, suggest_num = 3):
         st.image(img, caption=captionname, width=100)
     if 'if_show_counter' in st.session_state:
         if st.session_state['if_show_counter']:
-            _, counter_dict, _ = compute_with_and_counter_heroes_for_each_pos(
-                [name], suggest_num)
             if position == 1:
-                targ_positions = [3,4,2,1]
+                versus_filter_list = get_pos_3_hero_list() + get_pos_4_hero_list()
+                with_filter_list = get_pos_5_hero_list()
             elif position == 2:
-                targ_positions = [2,3,1,4]
+                versus_filter_list = get_pos_2_hero_list()
+                with_filter_list = [] # no with for pos 2
             elif position == 3:
-                targ_positions = [1,5,2,4]
+                versus_filter_list = get_pos_1_hero_list() + get_pos_5_hero_list()
+                with_filter_list = get_pos_4_hero_list()
             elif position == 4:
-                targ_positions = [1,2,3,4]
+                versus_filter_list = get_pos_1_hero_list() + get_pos_5_hero_list()
+                with_filter_list = get_pos_3_hero_list()
             elif position == 5:
-                targ_positions = [1,2,3,4]
-            dataframe = {
-                        f"Pos {targ_position} CNTR": get_online_image_urls(counter_dict[targ_position]) for targ_position in targ_positions
-                        }
-            dataframe = pd.DataFrame(dataframe)
-            st.caption(f"Counters for {name}")
-            st.markdown(table_with_images(df=dataframe,
-                                          url_columns=[f"Pos {targ_position} CNTR" for targ_position in targ_positions],),
-                        unsafe_allow_html=True)
-            st.divider()
+                versus_filter_list = get_pos_3_hero_list() + get_pos_4_hero_list()
+                with_filter_list = get_pos_1_hero_list()
+                
+            with_list = list(st.session_state["hero_lanewin_with_dict"][name].keys())
+            with_list = [n for n in with_list if n in with_filter_list][:suggest_num]
+            versus_list = list(st.session_state["hero_lanewin_versus_dict"][name].keys())
+            versus_list = [n for n in versus_list if n in versus_filter_list][:suggest_num]
+            caption_str = f"Win Lane Adv for {name}"
+            if len(with_list) == suggest_num and position != 2:
+                dataframe = {
+                            f"CNTR": get_online_image_urls(versus_list),
+                            f"WITH": get_online_image_urls(with_list),
+                            }
+                dataframe = pd.DataFrame(dataframe)
+                st.caption(caption_str)
+                st.markdown(table_with_images(df=dataframe,
+                                            url_columns=["CNTR", "WITH"],),
+                            unsafe_allow_html=True)
+                st.divider()
+            else:
+                dataframe = {
+                            f"CNTR": get_online_image_urls(versus_list),
+                            }
+                dataframe = pd.DataFrame(dataframe)
+                st.caption(caption_str)
+                st.markdown(table_with_images(df=dataframe,
+                                            url_columns=["CNTR",],),
+                            unsafe_allow_html=True)
+                st.divider()
 
 
 def pos_card_on_click():
@@ -114,6 +135,9 @@ p {
     if "today_winrate_dict" not in st.session_state:
         st.session_state["today_winrate_dict"] = load_today_hero_winrate_dict()
         
+    if "hero_lanewin_versus_dict" not in st.session_state:
+        st.session_state["hero_lanewin_versus_dict"], st.session_state["hero_lanewin_with_dict"] = load_winlane_hero_dict()
+        
     if 'raw_df' not in st.session_state:
         st.session_state['raw_df'] = get_hero_csv_data_raw()
         
@@ -143,8 +167,9 @@ p {
                  "margin": "20px"
              },
     })
-    st.header("Hero Pools with Live Stats!")
-    st.toggle("Show Counter Heroes", key="if_show_counter")
+    st.header("Hero Pools with Live Stats and Win Lane Advice!")
+    st.warning("If you are looking for Win Game advice, please check out the Hero Counter page.")
+    st.toggle("Show Win Lane Advices", key="if_show_counter")
 
     card_cols = st.columns(5, gap="small")
 

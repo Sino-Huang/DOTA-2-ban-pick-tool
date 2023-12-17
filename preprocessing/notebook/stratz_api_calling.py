@@ -321,6 +321,122 @@ with open("../records/hero_winrate_info_dict.pkl", 'wb') as f:
 with open("../../dota_banpick/data/records/hero_winrate_info_dict.pkl", 'wb') as f:
     pickle.dump(hero_winrate_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
+# %% [markdown]
+# ## Lane win is win
+# - get lane win info
+
+# %%
+hero_lanewin_versus_dict = dict()
+hero_lanewin_with_dict = dict()
+ids = [h['id'] for h in id_to_name_dict_json['data']['constants']['heroes']]
+hero_names = [h['displayName'] for h in id_to_name_dict_json['data']['constants']['heroes']]
+for heroind, id in enumerate(tqdm(ids)):
+    hname = hero_names[heroind]
+    hero_lanewin_versus_dict[hname] = dict()
+    hero_lanewin_with_dict[hname] = dict()
+    
+    body_versus="""
+{{
+	heroStats{{
+    laneOutcome(isWith: {is_with} heroId: {cid} bracketBasicIds:[DIVINE_IMMORTAL, LEGEND_ANCIENT, CRUSADER_ARCHON]){{
+      heroId1
+      heroId2
+      matchCount
+      winCount
+      stompWinCount
+      matchCount
+      matchWinCount
+    }}
+  }}
+}}
+""".format(cid=id, is_with="false")
+    body_with="""
+{{
+	heroStats{{
+    laneOutcome(isWith: {is_with} heroId: {cid} bracketBasicIds:[DIVINE_IMMORTAL, LEGEND_ANCIENT, CRUSADER_ARCHON]){{
+      heroId1
+      heroId2
+      matchCount
+      winCount
+      stompWinCount
+      matchCount
+      matchWinCount
+    }}
+  }}
+}}
+""".format(cid=id, is_with="true")
+    headers= {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {token}'
+          }
+    response_versus = requests.post(url="https://api.stratz.com/graphql", json={"query": body_versus}, headers=headers)
+    response_with = requests.post(url="https://api.stratz.com/graphql", json={"query": body_with}, headers=headers)
+    
+    # print("response status code: ", response.status_code)
+    if response_versus.status_code != 200:
+        print(f"GG, LANE WIN IS WIN not equal 200 for {id} {hname}")
+        break
+    output_dict_versus = json.loads(response_versus.content.decode())['data']['heroStats']['laneOutcome']
+    output_dict_with = json.loads(response_with.content.decode())['data']['heroStats']['laneOutcome']
+    for sd in output_dict_versus:
+        assert sd['heroId1'] == id
+        matchCount = sd['matchCount']
+        if matchCount <= 100:
+            continue 
+        winCount = sd['winCount']
+        stompWinCount = sd['stompWinCount']
+        winlane_rate = (winCount +  stompWinCount) / matchCount
+        matchWinCount = sd['matchWinCount']
+        win_rate = matchWinCount / matchCount
+        score = win_rate*0.4 + winlane_rate * 0.6
+        target_hero_id = sd['heroId2']
+        target_hero_ind = ids.index(target_hero_id)
+        target_hname = hero_names[target_hero_ind]
+        hero_lanewin_versus_dict[hname][target_hname] = score
+    for sd in output_dict_with:
+        assert sd['heroId1'] == id
+        matchCount = sd['matchCount']
+        if matchCount <= 100:
+            continue 
+        winCount = sd['winCount']
+        stompWinCount = sd['stompWinCount']
+        winlane_rate = (winCount +  stompWinCount) / matchCount
+        matchWinCount = sd['matchWinCount']
+        win_rate = matchWinCount / matchCount
+        score = win_rate*0.4 + winlane_rate * 0.6
+        target_hero_id = sd['heroId2']
+        target_hero_ind = ids.index(target_hero_id)
+        target_hname = hero_names[target_hero_ind]
+        hero_lanewin_with_dict[hname][target_hname] = score
+    
+# sort 
+for k in hero_lanewin_with_dict:
+    hero_lanewin_with_dict[k] = dict(sorted(hero_lanewin_with_dict[k].items(), key=lambda item: item[1], reverse=True))
+for k in hero_lanewin_versus_dict:
+    hero_lanewin_versus_dict[k] = dict(sorted(hero_lanewin_versus_dict[k].items(), key=lambda item: item[1]))
+
+# sort the winrate dict
+# hero_winrate_dict = dict(sorted(hero_winrate_dict.items(), key=lambda item: item[1]['winrate'], reverse=True))
+
+# %%
+# save them 
+with open("../records/hero_lanewin_versus_dict.pkl", 'wb') as f:
+    pickle.dump(hero_lanewin_versus_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+# save them to deployment env 
+with open("../../dota_banpick/data/records/hero_lanewin_versus_dict.pkl", 'wb') as f:
+    pickle.dump(hero_lanewin_versus_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+# save them 
+with open("../records/hero_lanewin_with_dict.pkl", 'wb') as f:
+    pickle.dump(hero_lanewin_with_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+# save them to deployment env 
+with open("../../dota_banpick/data/records/hero_lanewin_with_dict.pkl", 'wb') as f:
+    pickle.dump(hero_lanewin_with_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
 # %%
 # run the server 
 subprocess.run(['bash', '/home/sukai/opt/run_banpick_website.sh'])

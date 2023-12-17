@@ -161,6 +161,17 @@ def load_today_hero_winrate_dict():
         d = pickle.load(f)
     return d
 
+@st.cache_data
+def load_winlane_hero_dict():
+    hero_lanewin_versus_dict_fp = os.path.join(record_folder, "hero_lanewin_versus_dict.pkl")
+    with open(hero_lanewin_versus_dict_fp, 'rb') as f:
+        hero_lanewin_versus_dict = pickle.load(f)
+    hero_lanewin_with_dict_fp = os.path.join(record_folder, "hero_lanewin_with_dict.pkl")
+    with open(hero_lanewin_with_dict_fp, 'rb') as f:
+        hero_lanewin_with_dict = pickle.load(f)
+    return hero_lanewin_versus_dict, hero_lanewin_with_dict
+
+
 def load_cached_name_hero_pool_dict(): # no more cache because we want different users to use
     # singleton_manager = Manager()
     # cache_dict = singleton_manager.dict()
