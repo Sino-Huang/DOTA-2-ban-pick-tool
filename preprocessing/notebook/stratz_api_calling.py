@@ -9,6 +9,8 @@ import json
 from tqdm.auto import tqdm
 from datetime import datetime
 import subprocess
+from dota_banpick import utils
+import shutil
 
 # %%
 url = "https://api.stratz.com/graphql"
@@ -436,6 +438,18 @@ with open("../records/hero_lanewin_with_dict.pkl", 'wb') as f:
 # save them to deployment env 
 with open("../../dota_banpick/data/records/hero_lanewin_with_dict.pkl", 'wb') as f:
     pickle.dump(hero_lanewin_with_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+# %% [markdown]
+# ## Warmup Cache Dict
+
+# %%
+utils.generate_warmup_cache(depth_limit= 1) 
+
+# %%
+# save to preprocess 
+src_warmup_dict_fp = "../../dota_banpick/data/records/depth_limit_1_warmup_cache_dict.pkl"
+dst_warmup_dict_fp = "../records/depth_limit_1_warmup_cache_dict.pkl"
+shutil.copyfile(src_warmup_dict_fp, dst_warmup_dict_fp)
 
 # %%
 # run the server 
