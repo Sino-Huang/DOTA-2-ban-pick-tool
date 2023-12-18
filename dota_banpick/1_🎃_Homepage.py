@@ -12,7 +12,7 @@ import pandas as pd
 import pickle
 from dota_banpick.config import DEPTH_LIMIT, LAST_UPDATE
 from dota_banpick.heuristic import compute_with_and_counter_heroes_for_each_pos
-from dota_banpick.st_cache import get_hero_csv_data_raw, get_online_image_urls, hero_counter_row_display_component, load_winlane_hero_dict, pos_description, load_today_hero_winrate_dict, get_hero_csv_data_filtered, get_image_data, get_pos_1_hero_list, get_pos_2_hero_list, get_pos_3_hero_list, get_pos_4_hero_list, get_pos_5_hero_list, get_position_colour_tags, get_position_default_imgspath
+from dota_banpick.st_cache import load_lane_rate_info_dict, get_hero_csv_data_raw, get_online_image_urls, hero_counter_row_display_component, load_winlane_hero_dict, pos_description, load_today_hero_winrate_dict, get_hero_csv_data_filtered, get_image_data, get_pos_1_hero_list, get_pos_2_hero_list, get_pos_3_hero_list, get_pos_4_hero_list, get_pos_5_hero_list, get_position_colour_tags, get_position_default_imgspath
 from streamlit_option_menu import option_menu
 from streamlit_card import card
 from annotated_text import annotated_text
@@ -37,14 +37,13 @@ def row_display_component(component_arg_list, width, position):
 
 def show_item_component(img, name, winrate, position, suggest_num = 5):
     with st.expander(f"{name}", expanded=False if st.session_state['screen_width'] < 800 and st.session_state['if_show_counter'] in ["Win Lane", "Win Game"] else True):
-        if st.session_state['if_show_counter']:
-            captionname = f"wr:{winrate}"
-        else:
-            captionname = name+f" wr:{winrate}"
+        hero_id = st.session_state["hero_lane_rate_info_dict"][name]['url'].split("/")[-1]
+        captionname = f"[wr: {winrate}](https://stratz.com/heroes/{hero_id}/guides?positionId=POSITION_{position})"
         if st.session_state['screen_width'] < 800:
-            st.image(img, caption=captionname, width=80)
+            st.image(img, width=80)
         else:
-            st.image(img, caption=captionname, width=100)
+            st.image(img, width=100)
+        st.markdown(captionname, unsafe_allow_html=True)
             
         if 'if_show_counter' in st.session_state:
             if st.session_state['if_show_counter'] in ["Win Lane", "Win Game"]:
@@ -198,6 +197,9 @@ p {
         
     if "screen_width" not in st.session_state:
         st.session_state["screen_width"] = int(streamlit_js_eval(js_expressions='screen.width', key = 'SCR'))
+        
+    if "hero_lane_rate_info_dict" not in st.session_state:
+        st.session_state["hero_lane_rate_info_dict"] = load_lane_rate_info_dict()
         
     if st.session_state["screen_width"] < 800:
         st.write('''<style>
