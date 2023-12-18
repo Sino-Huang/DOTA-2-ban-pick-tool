@@ -5,6 +5,7 @@ import json
 import os
 from natsort import natsorted
 import streamlit as st
+from streamlit.errors import StreamlitAPIException
 from multiprocessing import Manager
 import copy
 import pandas as pd
@@ -146,12 +147,14 @@ def pos_card_on_click():
 
 
 if __name__ == "__main__":
-
-    st.set_page_config(
-        page_title="DOTA2 Ban Pick Tool",
-        page_icon="✨",
-        layout="wide",
-    )
+    try:
+        st.set_page_config(
+            page_title="DOTA2 Ban Pick Tool",
+            page_icon="✨",
+            layout="wide",
+        )
+    except StreamlitAPIException:
+        pass
     # _ = load_alpha_beta_cache_dict()
     st.header("DOTA2 Ban Pick Tool by Sino-CICI")
     # write a general description about this web app

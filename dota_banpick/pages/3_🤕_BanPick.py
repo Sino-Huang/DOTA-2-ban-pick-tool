@@ -13,7 +13,7 @@ from dota_banpick.alphabeta import alphabeta
 from dota_banpick.heuristic import compute_associated_ban_suggestion_first_round, compute_bad_picks_for_each_pos
 from dota_banpick.pickaction import StateNode
 from streamlit_extras.image_in_tables import table_with_images
-from dota_banpick.config import DEPTH_LIMIT, FIRST_ROUND_PICK_CHOICE, UNCOMMON_HEROES
+from dota_banpick.config import DEPTH_LIMIT, ALLY_FIRST_ROUND_PICK_CHOICE, UNCOMMON_HEROES
 import pandas as pd
 from streamlit.errors import StreamlitAPIException
 from dota_banpick.st_cache import load_alpha_beta_cache_dict, record_folder, get_heros, pos_description, get_hero_csv_data_raw, get_name_abbrev_dict, get_hero_csv_data, get_image_data, load_cached_name_hero_pool_dict, load_default_hero_pools

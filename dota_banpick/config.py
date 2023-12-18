@@ -67,10 +67,16 @@ NODE_EXPANSION_LIMIT = 9999
 DEPTH_LIMIT = 0 # you cannot have it more than 2,, for real time speed up, set it to 0, 1 would take 10 secs, st to to warmup 
 SUGGESTION_NUM = 200
 
-FIRST_ROUND_PICK_CHOICE = [ # need to be in ascending order
+ALLY_FIRST_ROUND_PICK_CHOICE = [ # need to be in ascending order
     [3, 4],
     [4, 5],
     [3, 5]
+]
+
+OPPO_FIRST_ROUND_PICK_CHOICE = [ # need to prevent from picking top meta heroes
+    [1, 2],
+    [2, 3],
+    [1, 3]
 ]
 
 FIRST_ROUND_COUNTER_CHOICE = [ 

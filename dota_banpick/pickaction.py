@@ -23,7 +23,7 @@ from glob import glob
 import pickle
 
 import numpy as np
-from dota_banpick.config import FIRST_ROUND_PICK_CHOICE, with_winrate_matrix, counter_rate_matrix, lane_rate_info_dict
+from dota_banpick.config import ALLY_FIRST_ROUND_PICK_CHOICE, OPPO_FIRST_ROUND_PICK_CHOICE, with_winrate_matrix, counter_rate_matrix, lane_rate_info_dict
 from dota_banpick.config import PRUNE_WORST_HERO_NUM
 from scipy.optimize import linear_sum_assignment
 
@@ -239,7 +239,7 @@ class StateNode:
 
         return self
 
-    def next_possible_nodes(self, first_round_pick_choice=FIRST_ROUND_PICK_CHOICE):
+    def next_possible_nodes(self, ally_first_round_pick_choice=ALLY_FIRST_ROUND_PICK_CHOICE, oppo_first_round_pick_choice=OPPO_FIRST_ROUND_PICK_CHOICE):
         """generate a list of possible nodes, based on the current round
         remember the first round pos combo restriction
 
@@ -323,7 +323,10 @@ class StateNode:
         # normal case
         if next_round in [1, 2, 3, 4]:
             if next_round in [1,2]:
-                round_pick_choice = first_round_pick_choice
+                if next_round == 1:
+                    round_pick_choice = ally_first_round_pick_choice
+                elif next_round == 2:
+                    round_pick_choice = oppo_first_round_pick_choice
                 if pick_same_hero_sit_flag:
                     temp_l = []
                     for pc in round_pick_choice:

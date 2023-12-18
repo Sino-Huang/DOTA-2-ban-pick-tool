@@ -19,9 +19,9 @@ import sys
 import time
 
 from natsort import natsorted
-from dota_banpick.config import default_hero_pools, ACTIVATE_SAVING_CACHE, DEPTH_LIMIT, PRUNE_WORST_HERO_NUM, SUGGESTION_NUM, versus_winrate_matrix, with_winrate_matrix, counter_rate_matrix
+from dota_banpick.config import ACTIVATE_SAVING_CACHE, PRUNE_WORST_HERO_NUM, SUGGESTION_NUM, counter_rate_matrix
 from dota_banpick.pickaction import StateNode
-from dota_banpick.heuristic import calculate_heuristic, compute_associated_ban_suggestion_first_round
+from dota_banpick.heuristic import calculate_heuristic
 from tqdm.auto import tqdm
 from multiprocessing import Manager, Pool
 from multiprocessing import Pool, Process, Lock

@@ -22,11 +22,11 @@ import pickle
 
 from natsort import natsorted
 from dota_banpick.alphabeta import alphabeta
-from config import DEPTH_LIMIT
+from dota_banpick.config import DEPTH_LIMIT
 import time
 from tqdm.auto import tqdm
 
-from pickaction import StateNode
+from dota_banpick.pickaction import StateNode
 
 def generate_warmup_cache(depth_limit = 2):
     assert 0< depth_limit <= 2
