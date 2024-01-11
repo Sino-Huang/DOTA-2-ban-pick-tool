@@ -184,7 +184,7 @@ p {
         st.session_state.card_click_count = 0
 
     if "show_pos_hero_ind" not in st.session_state:
-        st.session_state["show_pos_hero_ind"] = -1
+        st.session_state["show_pos_hero_ind"] = 1 # -1 means not showing, 1 means show carry by default
         
     if "today_winrate_dict" not in st.session_state:
         st.session_state["today_winrate_dict"] = load_today_hero_winrate_dict()
@@ -226,7 +226,7 @@ p {
     })
     st.header("Hero Pools with Live Stats and Win Lane Advice!")
     st.warning("If you are looking for Win Game advice, please check out the Hero Counter page.")
-    st.radio("What's your preference for hero advice?", ["Win Lane", "Win Game", "Hide"], captions=["You may not win the game in the end but you can smoothly survive the early game and let others to carry you.", "Calm down and be patient, you can win the game!", "Hide for saving space."], key="if_show_counter", index=2)
+    st.radio("What's your preference for hero advice?", ["Win Lane", "Win Game", "Hide"], captions=["You may not win the game in the end but you can smoothly survive the early game and let others to carry you.", "Calm down and be patient, you can win the game!", "Hide for saving space."], key="if_show_counter", index=1)
 
     card_cols = st.columns(5, gap="small")
 
