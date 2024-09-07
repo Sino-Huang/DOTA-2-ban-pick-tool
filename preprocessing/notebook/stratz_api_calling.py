@@ -328,8 +328,7 @@ for heroind, id in enumerate(tqdm(ids)):
                 url="https://api.stratz.com/graphql", json={"query": body}, headers=headers)
             # print("response status code: ", response.status_code)
             if response.status_code != 200:
-                print(f"GG, LANE INFO not equal 200 for {id} {hname}")
-                break
+                raise Exception(f"GG, LANE INFO not equal 200 for {id} {hname}")
             output_dict = json.loads(response.content.decode())
             lane_counts = [h['matchCount']
                           for h in output_dict['data']['heroStats']['stats']]
@@ -574,6 +573,18 @@ utils.generate_warmup_cache(depth_limit=1)
 src_warmup_dict_fp = os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/depth_limit_1_warmup_cache_dict.pkl")
 dst_warmup_dict_fp = os.path.join(os.path.dirname(__file__), "../records/depth_limit_1_warmup_cache_dict.pkl")
 shutil.copyfile(src_warmup_dict_fp, dst_warmup_dict_fp)
+
+# After all the data processing and saving is done:
+
+# Define source and destination paths
+src_folder = os.path.join(os.path.dirname(__file__), "../records")
+dst_folder = os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records")
+
+# Copy the entire folder
+shutil.copytree(src_folder, dst_folder, dirs_exist_ok=True)
+
+print(f"Copied records from {src_folder} to {dst_folder}")
+
 
 # %%
 # run the server
