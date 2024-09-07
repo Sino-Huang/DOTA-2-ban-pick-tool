@@ -14,11 +14,14 @@ from datetime import datetime
 import subprocess
 from dota_banpick import utils
 import shutil
+import pandas as pd
 
 # %%
 url = "https://api.stratz.com/graphql"
 token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTdWJqZWN0IjoiNTliOTNjYmMtOWE3Mi00NzdhLWExYjEtNzZhMDgwM2VkMjBlIiwiU3RlYW1JZCI6IjgxNTU0Mzc2IiwibmJmIjoxNzEyODM2ODU2LCJleHAiOjE3NDQzNzI4NTYsImlhdCI6MTcxMjgzNjg1NiwiaXNzIjoiaHR0cHM6Ly9hcGkuc3RyYXR6LmNvbSJ9.DjsHo8I4XE9vAwYdXmWlVXUxvCEBfdzLhw7lLSp8jio"
 
+hero_abbrev_df = pd.read_csv("../records/hero_abbrev.csv")
+HERO_LEN_M_ONE = len(hero_abbrev_df) - 1
 
 # %%
 # test
@@ -107,12 +110,12 @@ def parse_graphql_output(output_dict, id_to_name_dict):
     try:
         list_length_error_flag = False
         assert len(
-            with_list) == 123, f"with list length is {len(with_list)}\n {with_list}"
-        assert len(vs_list) == 123, f"vs list length is {len(vs_list)}"
+            with_list) == HERO_LEN_M_ONE, f"with list length is {len(with_list)}\n {with_list}"
+        assert len(vs_list) == HERO_LEN_M_ONE, f"vs list length is {len(vs_list)}"
     except Exception as e:
         list_length_error_flag = True
         print(e)
-        print("The length is not 123 for with or vs list")
+        print(f"The length is not {HERO_LEN_M_ONE} for with len {len(with_list)} or vs len {len(vs_list)}")
       
     with_win_rate_avg = 0
     synergy_avg = 0

@@ -49,7 +49,13 @@ python ./stratz_api_calling.py
 
 # Other Important Notes
 
+> [!IMPORTANT]
+>
+> This requires manual update for every important patch update!
+
 - if there are major patch updates (e.g., introducing new heroes), one need to manually update the following files 
+  - `heronames.csv` , heronames can be found in https://stratz.com/heroes
   - `hero_abbrev.csv`
-  - `heronames.csv`
   - `default_pos_x_hero_pool.txt`
+
+**THEN, you need to manually copy them to the dev environment**
