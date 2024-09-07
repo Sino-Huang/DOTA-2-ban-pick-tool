@@ -20,7 +20,7 @@ import pandas as pd
 url = "https://api.stratz.com/graphql"
 token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTdWJqZWN0IjoiNTliOTNjYmMtOWE3Mi00NzdhLWExYjEtNzZhMDgwM2VkMjBlIiwiU3RlYW1JZCI6IjgxNTU0Mzc2IiwibmJmIjoxNzEyODM2ODU2LCJleHAiOjE3NDQzNzI4NTYsImlhdCI6MTcxMjgzNjg1NiwiaXNzIjoiaHR0cHM6Ly9hcGkuc3RyYXR6LmNvbSJ9.DjsHo8I4XE9vAwYdXmWlVXUxvCEBfdzLhw7lLSp8jio"
 
-hero_abbrev_df = pd.read_csv("../records/hero_abbrev.csv")
+hero_abbrev_df = pd.read_csv(os.path.join(os.path.dirname(__file__), "../records/hero_abbrev.csv"))
 HERO_LEN_M_ONE = len(hero_abbrev_df) - 1
 
 # %%
@@ -250,36 +250,36 @@ for id in (qbar := tqdm(all_hero_ids)):
 
 # %%
 # save them
-with open("../records/counter_rate_matrix.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../records/counter_rate_matrix.pkl"), 'wb') as f:
     pickle.dump(counter_rate_matrix, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-with open("../records/versus_winrate_matrix.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../records/versus_winrate_matrix.pkl"), 'wb') as f:
     pickle.dump(versus_winrate_matrix, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-with open("../records/synergy_rate_matrix.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../records/synergy_rate_matrix.pkl"), 'wb') as f:
     pickle.dump(synergy_rate_matrix, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-with open("../records/with_winrate_matrix.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../records/with_winrate_matrix.pkl"), 'wb') as f:
     pickle.dump(with_winrate_matrix, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 # %%
 # save them to deployment env
-with open("../../dota_banpick/data/records/counter_rate_matrix.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/counter_rate_matrix.pkl"), 'wb') as f:
     pickle.dump(counter_rate_matrix, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-with open("../../dota_banpick/data/records/versus_winrate_matrix.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/versus_winrate_matrix.pkl"), 'wb') as f:
     pickle.dump(versus_winrate_matrix, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-with open("../../dota_banpick/data/records/synergy_rate_matrix.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/synergy_rate_matrix.pkl"), 'wb') as f:
     pickle.dump(synergy_rate_matrix, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-with open("../../dota_banpick/data/records/with_winrate_matrix.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/with_winrate_matrix.pkl"), 'wb') as f:
     pickle.dump(with_winrate_matrix, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 # %%
 date_str = datetime.now().strftime("%d %B %Y")
-with open("../../dota_banpick/update_time.txt", 'w') as f:
+with open(os.path.join(os.path.dirname(__file__), "../../dota_banpick/update_time.txt"), 'w') as f:
     f.write(date_str)
 
 # %% [markdown]
@@ -351,11 +351,11 @@ for heroind, id in enumerate(tqdm(ids)):
 
 # %%
 # save them
-with open("../records/lane_rate_info_dict.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__),"../records/lane_rate_info_dict.pkl"), 'wb') as f:
     pickle.dump(lane_rate_info_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 # save them to deployment env
-with open("../../dota_banpick/data/records/lane_rate_info_dict.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/lane_rate_info_dict.pkl"), 'wb') as f:
     pickle.dump(lane_rate_info_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 # %% [markdown]
@@ -420,11 +420,11 @@ hero_winrate_dict = dict(sorted(hero_winrate_dict.items(
 
 # %%
 # save them
-with open("../records/hero_winrate_info_dict.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__),"../records/hero_winrate_info_dict.pkl"), 'wb') as f:
     pickle.dump(hero_winrate_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 # save them to deployment env
-with open("../../dota_banpick/data/records/hero_winrate_info_dict.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/hero_winrate_info_dict.pkl"), 'wb') as f:
     pickle.dump(hero_winrate_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 # %% [markdown]
@@ -547,20 +547,20 @@ for k in hero_lanewin_versus_dict:
 
 # %%
 # save them
-with open("../records/hero_lanewin_versus_dict.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__),"../records/hero_lanewin_versus_dict.pkl"), 'wb') as f:
     pickle.dump(hero_lanewin_versus_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 # save them to deployment env
-with open("../../dota_banpick/data/records/hero_lanewin_versus_dict.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/hero_lanewin_versus_dict.pkl"), 'wb') as f:
     pickle.dump(hero_lanewin_versus_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 # save them
-with open("../records/hero_lanewin_with_dict.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__),"../records/hero_lanewin_with_dict.pkl"), 'wb') as f:
     pickle.dump(hero_lanewin_with_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 # save them to deployment env
-with open("../../dota_banpick/data/records/hero_lanewin_with_dict.pkl", 'wb') as f:
+with open(os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/hero_lanewin_with_dict.pkl"), 'wb') as f:
     pickle.dump(hero_lanewin_with_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 # %% [markdown]
@@ -571,8 +571,8 @@ utils.generate_warmup_cache(depth_limit=1)
 
 # %%
 # save to preprocess
-src_warmup_dict_fp = "../../dota_banpick/data/records/depth_limit_1_warmup_cache_dict.pkl"
-dst_warmup_dict_fp = "../records/depth_limit_1_warmup_cache_dict.pkl"
+src_warmup_dict_fp = os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/depth_limit_1_warmup_cache_dict.pkl")
+dst_warmup_dict_fp = os.path.join(os.path.dirname(__file__), "../records/depth_limit_1_warmup_cache_dict.pkl")
 shutil.copyfile(src_warmup_dict_fp, dst_warmup_dict_fp)
 
 # %%
