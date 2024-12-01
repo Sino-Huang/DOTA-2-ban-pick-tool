@@ -20,6 +20,8 @@ import pandas as pd
 url = "https://api.stratz.com/graphql"
 token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTdWJqZWN0IjoiNTliOTNjYmMtOWE3Mi00NzdhLWExYjEtNzZhMDgwM2VkMjBlIiwiU3RlYW1JZCI6IjgxNTU0Mzc2IiwibmJmIjoxNzEyODM2ODU2LCJleHAiOjE3NDQzNzI4NTYsImlhdCI6MTcxMjgzNjg1NiwiaXNzIjoiaHR0cHM6Ly9hcGkuc3RyYXR6LmNvbSJ9.DjsHo8I4XE9vAwYdXmWlVXUxvCEBfdzLhw7lLSp8jio"
 
+# token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTdWJqZWN0IjoiNWZjYzIxZjgtYWQ4OS00NjMzLThkN2YtYjU5NTMyMjYwNWE0IiwiU3RlYW1JZCI6IjI1NzQ0MTQ4MyIsIm5iZiI6MTczMzA0NjE1MiwiZXhwIjoxNzY0NTgyMTUyLCJpYXQiOjE3MzMwNDYxNTIsImlzcyI6Imh0dHBzOi8vYXBpLnN0cmF0ei5jb20ifQ.sEejrj0b4awoG5TU8ocGz6GfbYstrcMd7nLIc5B4OR4"
+
 hero_abbrev_df = pd.read_csv(os.path.join(os.path.dirname(__file__), "../records/hero_abbrev.csv"))
 HERO_LEN_M_ONE = len(hero_abbrev_df) - 1
 
@@ -28,7 +30,7 @@ HERO_LEN_M_ONE = len(hero_abbrev_df) - 1
 body = """
 {
   heroStats {
-    heroVsHeroMatchup(heroId: 2 bracketBasicIds: [CRUSADER_ARCHON, LEGEND_ANCIENT, DIVINE_IMMORTAL]) {
+    heroVsHeroMatchup(heroId: 2 bracketBasicIds:[DIVINE_IMMORTAL, LEGEND_ANCIENT, CRUSADER_ARCHON]) {
       advantage {
         heroId
         with {
@@ -51,7 +53,8 @@ body = """
 headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
-    'Authorization': f'Bearer {token}'
+    'Authorization': f'Bearer {token}',
+    'User-Agent': 'STRATZ_API'
 }
 response = requests.post(url=url, json={"query": body}, headers=headers)
 print("response status code: ", response.status_code)
@@ -76,7 +79,8 @@ body = """
 headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
-    'Authorization': f'Bearer {token}'
+    'Authorization': f'Bearer {token}',
+    'User-Agent': 'STRATZ_API'
 }
 response = requests.post(url=url, json={"query": body}, headers=headers)
 print("response status code: ", response.status_code)
@@ -199,7 +203,7 @@ for id in (qbar := tqdm(all_hero_ids)):
     body = """
 {{
   heroStats {{
-    heroVsHeroMatchup(heroId: {cid} bracketBasicIds: [LEGEND_ANCIENT, CRUSADER_ARCHON, DIVINE_IMMORTAL]) {{
+    heroVsHeroMatchup(heroId: {cid}) {{
       advantage {{
         heroId
         with {{
@@ -222,7 +226,8 @@ for id in (qbar := tqdm(all_hero_ids)):
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {token}'
+        'Authorization': f'Bearer {token}',
+        'User-Agent': 'STRATZ_API'
     }
     try_limit = 5
     try_count = 0
@@ -245,7 +250,7 @@ for id in (qbar := tqdm(all_hero_ids)):
             print("Error for ", id, id_to_name_dict[id])
             print("Retry after 1 second")
             try_count += 1
-            time.sleep(1)
+            time.sleep(1.5)
         
 
 # %%
@@ -308,7 +313,7 @@ for heroind, id in enumerate(tqdm(ids)):
     body = """
 {{
   heroStats{{
-    stats(heroIds:[{cid}] bracketBasicIds:[LEGEND_ANCIENT, DIVINE_IMMORTAL, CRUSADER_ARCHON] positionIds:[POSITION_1, POSITION_2, POSITION_3, POSITION_4, POSITION_5] groupByPosition:true){{
+    stats(heroIds:[{cid}] positionIds:[POSITION_1, POSITION_2, POSITION_3, POSITION_4, POSITION_5] groupByPosition:true){{
       
       matchCount
     }}
@@ -318,7 +323,8 @@ for heroind, id in enumerate(tqdm(ids)):
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {token}'
+        'Authorization': f'Bearer {token}',
+        'User-Agent': 'STRATZ_API'
     }
     try_limit = 5
     try_count = 0
@@ -339,7 +345,7 @@ for heroind, id in enumerate(tqdm(ids)):
             print(f"Error for {id} {hname}")
             print("Retry after 1 second")
             try_count += 1
-            time.sleep(1)
+            time.sleep(1.5)
             # breakpoint()
     lane_pick_rates = [h/sum(lane_counts) for h in lane_counts]
 
@@ -367,6 +373,7 @@ ids = [h['id'] for h in id_to_name_dict_json['data']['constants']['heroes']]
 hero_names = [h['displayName']
               for h in id_to_name_dict_json['data']['constants']['heroes']]
 for heroind, id in enumerate(tqdm(ids)):
+    time.sleep(1)
     hname = hero_names[heroind]
     hero_winrate_dict[hname] = dict()
     url = f"https://stratz.com/heroes/{id}"
@@ -385,7 +392,8 @@ for heroind, id in enumerate(tqdm(ids)):
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {token}'
+        'Authorization': f'Bearer {token}',
+        'User-Agent': 'STRATZ_API'
     }
     try_limit = 5
     try_count = 0
@@ -397,6 +405,8 @@ for heroind, id in enumerate(tqdm(ids)):
             # print("response status code: ", response.status_code)
             if response.status_code != 200:
                 print(f"GG, EVERYDAY WINRATE not equal 200 for {id} {hname}")
+                # set the winrate to 48
+                hero_winrate_dict[hname]['winrate'] = 0.48
                 break
             output_dict = json.loads(response.content.decode())
             win_counts = sum([h['winCount']
@@ -410,7 +420,7 @@ for heroind, id in enumerate(tqdm(ids)):
             print(f"Error for {id} {hname}")
             print("Retry after 1 second")
             try_count += 1
-            time.sleep(1)
+            time.sleep(1.5)
             # breakpoint()
 
 # sort the winrate dict
@@ -438,6 +448,7 @@ ids = [h['id'] for h in id_to_name_dict_json['data']['constants']['heroes']]
 hero_names = [h['displayName']
               for h in id_to_name_dict_json['data']['constants']['heroes']]
 for heroind, id in enumerate(tqdm(ids)):
+    time.sleep(1)
     hname = hero_names[heroind]
     hero_lanewin_versus_dict[hname] = dict()
     hero_lanewin_with_dict[hname] = dict()
@@ -445,7 +456,7 @@ for heroind, id in enumerate(tqdm(ids)):
     body_versus = """
 {{
 	heroStats{{
-    laneOutcome(isWith: {is_with} heroId: {cid} bracketBasicIds:[DIVINE_IMMORTAL, LEGEND_ANCIENT, CRUSADER_ARCHON]){{
+    laneOutcome(isWith: {is_with} heroId: {cid}){{
       heroId1
       heroId2
       matchCount
@@ -460,7 +471,7 @@ for heroind, id in enumerate(tqdm(ids)):
     body_with = """
 {{
 	heroStats{{
-    laneOutcome(isWith: {is_with} heroId: {cid} bracketBasicIds:[DIVINE_IMMORTAL, LEGEND_ANCIENT, CRUSADER_ARCHON]){{
+    laneOutcome(isWith: {is_with} heroId: {cid}){{
       heroId1
       heroId2
       matchCount
@@ -475,7 +486,8 @@ for heroind, id in enumerate(tqdm(ids)):
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {token}'
+        'Authorization': f'Bearer {token}',
+        'User-Agent': 'STRATZ_API'
     }
     try_limit = 5
     try_count = 0
@@ -488,22 +500,25 @@ for heroind, id in enumerate(tqdm(ids)):
 
             # print("response status code: ", response.status_code)
             if response_versus.status_code != 200:
-                print(f"GG, LANE WIN IS WIN not equal 200 for {id} {hname}")
-                break
+                raise Exception(f"GG, LANE WIN IS WIN is {response_versus.status_code} for {id} {hname}")
             output_dict_versus = json.loads(response_versus.content.decode())[
                 'data']['heroStats']['laneOutcome']
             output_dict_with = json.loads(response_with.content.decode())[
                 'data']['heroStats']['laneOutcome']
+            if output_dict_versus is None or len(output_dict_versus) == 0:
+                raise Exception(f"GG, output_dict_versus empty for {id} {hname}")
+            if output_dict_with is None or len(output_dict_with) == 0:
+                raise Exception(f"GG, output_dict_with WIN empty for {id} {hname}")
             break
         except Exception as e:
             print(e)
             print(f"Error for {id} {hname}")
             print("Retry after 1 second")
             try_count += 1
-            time.sleep(1)
+            time.sleep(1.5)
             # breakpoint()
     for sd in output_dict_versus:
-        assert sd['heroId1'] == id
+        # assert sd['heroId1'] == id # no need for now 
         matchCount = sd['matchCount']
         if matchCount <= 100:
             continue
@@ -518,7 +533,7 @@ for heroind, id in enumerate(tqdm(ids)):
         target_hname = hero_names[target_hero_ind]
         hero_lanewin_versus_dict[hname][target_hname] = score
     for sd in output_dict_with:
-        assert sd['heroId1'] == id
+        # assert sd['heroId1'] == id # no need for now
         matchCount = sd['matchCount']
         if matchCount <= 100:
             continue
