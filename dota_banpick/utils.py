@@ -22,11 +22,14 @@ import pickle
 
 from natsort import natsorted
 from dota_banpick.alphabeta import alphabeta
+from dota_banpick.alphabeta_captain import alphabeta as alphabeta_captain
 from dota_banpick.config import DEPTH_LIMIT
 import time
 from tqdm.auto import tqdm
 
 from dota_banpick.pickaction import StateNode
+from dota_banpick.pickaction_captain import StateNodeCaptain
+
 
 def generate_warmup_cache(depth_limit = 2):
     assert 0< depth_limit <= 2
@@ -68,6 +71,39 @@ def generate_warmup_cache(depth_limit = 2):
     end_time = time.time()
     elapsed_time = end_time - start_time # in second
     print("Elapsed time in seconds: ", elapsed_time) 
+
+
+
+
+    manager = Manager()
+    alpha_beta_cache_dict = manager.dict()
+
+    # get alphabeta captain version 
+    start_node = StateNodeCaptain(*ally_hero_pools, *opponent_hero_pools, if_bp_first=True)
+    value, suggested_hero_pick_dict = alphabeta_captain(
+        start_node, 0, -999, 999, True, depth_limit, True, alpha_beta_cache_dict)
+    
+    start_node = StateNodeCaptain(*ally_hero_pools, *opponent_hero_pools, if_bp_first=False)
+    value, suggested_hero_pick_dict = alphabeta_captain(
+        start_node, 0, -999, 999, True, depth_limit, True, alpha_beta_cache_dict)
+    
+    # shrink it 
+    alpha_beta_cache_dict = become_normal_cache(alpha_beta_cache_dict)
+    # save cache
+    print("Save dict ing...")
+    with open(os.path.join(record_folder, f"depth_limit_{depth_limit}_warmup_cache_dict_captain.pkl"), 'wb') as f:
+        pickle.dump(dict(alpha_beta_cache_dict), f)
+    print("test time with cache")
+    print(f"A Cache size {len(alpha_beta_cache_dict)}")
+    start_time = time.time()
+    value, suggested_hero_pick_dict = alphabeta_captain(
+        start_node, 0, -999, 999, True, depth_limit, True, alpha_beta_cache_dict)
+    
+    end_time = time.time()
+    elapsed_time = end_time - start_time # in second
+    print("Elapsed time in seconds: ", elapsed_time) 
+
+
     
 def pre_sort_counter_rate_matrix():
     """counter rate matrix sort with descending order, i.e., from countering to get countered
@@ -141,7 +177,13 @@ def shrink_warmup_cache(cache_dict):
     for k, v in cache_dict.items():
         if "Current Round: 0" in k or "Current Round: 1" in k:
             new_dict[k] = v
-            
+
+    return new_dict
+
+def become_normal_cache(cache_dict):
+    new_dict= dict()
+    for k, v in cache_dict.items():
+        new_dict[k] = v
             
     return new_dict
 

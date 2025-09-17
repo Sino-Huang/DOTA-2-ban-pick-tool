@@ -46,7 +46,7 @@ if __name__ == "__main__":
     if 'raw_df' not in st.session_state:
         st.session_state['raw_df'] = get_hero_csv_data_raw()
 
-    st.title("Know How to Matchup With a Hero")
+    st.title("Know How to Counter/Coop Heroes 后知后觉，英雄克制与合作建议 🤖")
     st.info("This can be seen as a simplified version of ban pick suggestions. ")
     main_cols = st.columns(2)
     with main_cols[0]:
@@ -56,7 +56,7 @@ if __name__ == "__main__":
                     on_change=hero_pick_selectbox_to_counter_on_change,)
         
     with main_cols[1]:
-        st.multiselect(f"Hero",
+        st.multiselect(f"Heroes 英雄选择",
                     options=st.session_state['name_abbrev_dict_keys_list'],
                     format_func=lambda x: st.session_state['name_abbrev_dict'][x],
                     key=f"hero_pick_selectbox_to_counter",

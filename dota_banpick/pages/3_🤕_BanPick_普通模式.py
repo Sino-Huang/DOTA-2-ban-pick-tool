@@ -10,7 +10,7 @@ import pandas as pd
 import pickle
 from PIL import Image
 from dota_banpick.alphabeta import alphabeta
-from dota_banpick.heuristic import compute_associated_ban_suggestion_first_round, compute_bad_picks_for_each_pos
+from dota_banpick.heuristic import compute_associated_opposite_suggestion_first_round, compute_bad_picks_for_each_pos
 from dota_banpick.pickaction import StateNode
 from streamlit_extras.image_in_tables import table_with_images
 from dota_banpick.config import DEPTH_LIMIT, ALLY_FIRST_ROUND_PICK_CHOICE, UNCOMMON_HEROES
@@ -210,7 +210,7 @@ def update_ban_hero_multiselect():
             with st.spinner("AI Searching..."):
                 val, prepara_phase_suggested_pick_dict = pipe_alphabeta(
                     st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, True)
-            prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
+            prepare_phase_suggested_ban_dict = compute_associated_opposite_suggestion_first_round(
                 prepara_phase_suggested_pick_dict)
 
             for ind, comboname in enumerate(prepara_phase_suggested_pick_dict):
@@ -280,9 +280,9 @@ def update_pick_hero_oppo_multiselect():
 
         if nonecount in [3, 1]:
             if nonecount == 3:
-                st.session_state.suggest_header_placeholder = "2nd Round Drafting Suggestion"
+                st.session_state.suggest_header_placeholder = "2nd Round Drafting Suggestion 第二轮建议，给己方挑选2个英雄，然后给对手挑选2个英雄"
             elif nonecount == 1:
-                st.session_state.suggest_header_placeholder = "Final Round Drafting Suggestion"
+                st.session_state.suggest_header_placeholder = "Final Round Drafting Suggestion 最后一轮建议，给自己方挑选1个英雄，然后给对手挑选1个英雄"
             st.session_state.info_placeholder = (
                 "Try to conter the picked ones and avoid picking bad heroes.")
             if nonecount_before != nonecount:
@@ -320,7 +320,7 @@ def update_pick_hero_oppo_multiselect():
 
 def ally_pick_select(select_key, ally_ind):
     selectedhero = st.session_state[select_key]
-    st.session_state.suggest_header_placeholder = "Refresh (F5) to BP your next game."
+    # st.session_state.suggest_header_placeholder = "Refresh (F5) to BP your next game."
     st.session_state.info_placeholder = (
         "Add ally heroes first, and then opponent heroes.")
     st.session_state.the_bp_node.add_hero(
@@ -331,7 +331,7 @@ def ally_pick_select(select_key, ally_ind):
             st.session_state.the_bp_node, 0, -999, 999, True, 0, False)
         prepare_phase_suggested_ban_dict = None 
         if st.session_state.the_bp_node.ally_heros.count(None) == 4:   
-            prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
+            prepare_phase_suggested_ban_dict = compute_associated_opposite_suggestion_first_round(
                 prepara_phase_suggested_pick_dict)
 
         for ind, comboname in enumerate(prepara_phase_suggested_pick_dict):
@@ -396,13 +396,13 @@ def ready_to_bp_on_click():
 
     st.session_state['ban_image_args_list'].clear()
 
-    st.session_state.suggest_header_placeholder = "Preparation Drafting Suggestion"
+    st.session_state.suggest_header_placeholder = "Preparation Drafting Suggestion 准备阶段和第一轮建议，请Ban掉英雄并挑选2个己方英雄，然后给对手挑选2个英雄"
     st.session_state.info_placeholder = ("In preparation phase, we only suggest Combos for Pos 3, 4 and 5."
                                          " This guidance stems from our assessment that Positions 1 and 2 should avoid early picks to reduce the risk of easy counters.")
     with st.spinner("AI Searching..."):
         val, prepara_phase_suggested_pick_dict = pipe_alphabeta(
             st.session_state.the_bp_node, 0, -999, 999, True, DEPTH_LIMIT, True)
-    prepare_phase_suggested_ban_dict = compute_associated_ban_suggestion_first_round(
+    prepare_phase_suggested_ban_dict = compute_associated_opposite_suggestion_first_round(
         prepara_phase_suggested_pick_dict)
 
     for ind, comboname in enumerate(prepara_phase_suggested_pick_dict):
@@ -465,7 +465,7 @@ if __name__ == "__main__":
             st.session_state['name_abbrev_dict'].keys())
 
     ready_to_bp = False
-    st.title("D2BP")
+    st.title("普通模式 Ban/Pick 辅助 🤖")
     player_cache_dict = load_cached_name_hero_pool_dict()
 
     # available position
@@ -491,7 +491,7 @@ if __name__ == "__main__":
             st.table(st.session_state['available_positions'])
 
         confirmteambut = st.button(
-            "Confirm your team structure", type="primary", use_container_width=True, on_click=ready_to_bp_on_click)
+            "点击开始BP", type="primary", use_container_width=True, on_click=ready_to_bp_on_click)
 
     # ---------------Table Placeholder -------------------
     if "suggest_header_placeholder" in st.session_state:

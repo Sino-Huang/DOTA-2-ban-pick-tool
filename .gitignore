@@ -165,6 +165,8 @@ data/notebook/<profile-folder>
 preprocessing/notebook/<profile-folder>
 preprocessing/data/hero_wide_icons/
 *warmup_cache_dict.pkl
+*warmup_cache_dict_captain.pkl
+
 
 # macOS
 *.DS_Store

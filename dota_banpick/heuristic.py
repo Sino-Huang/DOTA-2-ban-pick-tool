@@ -2,7 +2,7 @@
 File Created: Tuesday, 17th October 2023 1:50:45 pm
 Author: Sukai Huang (huangsukai1997@gmail.com)
 -----
-Last Modified: Tuesday, 17th October 2023 2:12:06 pm
+Last Modified: Wednesday, 17 September 2025 7:07 pm
 Modified By: Sukai Huang (huangsukai1997@gmail.com>)
 -----
 Copyright 2023 - 2023 by Sukai@Community Project
@@ -97,6 +97,94 @@ def calculate_heuristic(ally_hero_list, opponent_hero_list,
     return heuristic
 
 
+def calculate_heuristic_captain(ally_hero_list, opponent_hero_list, ban_hero_list,
+                                current_round,
+                        counter_weight=COUNTER_WEIGHT,
+                        counter_temperature_list=COUNTER_TEMPERATURE_LIST,
+                        ban_impact_to_alphabeta_heuristic=BAN_IMPACT_TO_ALPHABETA_HEURISTIC
+
+                        ):
+    """it will return the advantage value for your team. 
+    Your team's goal is to maximise it, while the opponent team's goal is to minimise it
+    versus_matrix should be counter rate matrix 
+
+    Args:
+        statenode (StateNode): _description_
+        versus_matrix (_type_): counter rate matrix
+        with_winrate_matrix (_type_): _description_
+        counter_weight (_type_, optional): _description_. Defaults to COUNTER_WEIGHT.
+        pos_1_counter_temperature (_type_, optional): _description_. Defaults to POS_1_COUNTER_TEMPERATURE.
+        pos_2_counter_temperature (_type_, optional): _description_. Defaults to POS_2_COUNTER_TEMPERATURE.
+        pos_3_counter_temperature (_type_, optional): _description_. Defaults to POS_3_COUNTER_TEMPERATURE.
+        pos_4_counter_temperature (_type_, optional): _description_. Defaults to POS_4_COUNTER_TEMPERATURE.
+        pos_5_counter_temperature (_type_, optional): _description_. Defaults to POS_5_COUNTER_TEMPERATURE.
+
+    Returns:
+        float: numeric score
+    """
+
+    # for versus
+    if opponent_hero_list.count(None) == 5:
+        global_vs_winrate = 0.5
+    else:
+        global_versus_winrate_lst = []
+        for ally_pos_ind, ally_hero in enumerate(ally_hero_list):
+            if ally_hero is not None:
+                local_versus_winrate_lst = []
+                for oppo_pos_ind, oppo_hero in enumerate(opponent_hero_list):
+                    if oppo_hero is not None:
+                        score = counter_rate_matrix[ally_hero][oppo_hero] * \
+                            counter_weight
+                        score = score * \
+                            counter_temperature_list[ally_pos_ind][oppo_pos_ind]
+                        score = score + 0.5  # 0.5 as base
+                        local_versus_winrate_lst.append(score)
+                if len(local_versus_winrate_lst) > 0:
+                    local_vs_winrate = np.mean(local_versus_winrate_lst)
+                else:
+                    local_vs_winrate = 0.5
+                global_versus_winrate_lst.append(local_vs_winrate)
+        if len(global_versus_winrate_lst) > 0:
+            global_vs_winrate = np.mean(global_versus_winrate_lst)
+        else:
+            global_vs_winrate = 0.5
+
+    # for with
+    global_with_winrate_lst = []
+    available_heros = [h for h in ally_hero_list if h is not None]
+    combination_list = list(itertools.combinations(available_heros, 2))
+    for combi in combination_list:
+        score = with_winrate_matrix[combi[0]][combi[1]]
+        global_with_winrate_lst.append(score)
+
+    if len(global_with_winrate_lst) > 0:
+        global_with_winrate = np.mean(global_with_winrate_lst)
+    else:
+        global_with_winrate = 0.5
+
+    heuristic = np.mean([global_vs_winrate, global_with_winrate])
+
+    # consider ban impact
+    # consider ban impact if round <= 18
+    if current_round <= 18 and len(ban_hero_list) > 0:
+        # the procedure is to subtract get the opponent_hero_set \ ban_hero_list, then get the max score in the remaining hero set
+        opponent_hero_set = set(opponent_team_hero_score_df['Hero'].tolist())
+        ban_hero_set = set(ban_hero_list)
+        remaining_hero_set = opponent_hero_set.difference(ban_hero_set)
+        # get the max score in the remaining hero set
+        if len(remaining_hero_set) > 0:
+            max_opponent_effective_score = -100
+            for idx, row in opponent_team_hero_score_df.iterrows():
+                hero = row['Hero']
+                score = row['Score']
+                if hero in remaining_hero_set:
+                    if score > max_opponent_effective_score:
+                        max_opponent_effective_score = score
+        # this score will be subtracted from the heuristic as it means the remaining advantage
+            heuristic = heuristic - max_opponent_effective_score * ban_impact_to_alphabeta_heuristic
+
+    return heuristic
+
 def compute_bad_picks_for_each_pos(statenode: StateNode,
                                    display_num=4):
     # output structure : {pos: [bad_hero_ele,]}
@@ -189,7 +277,7 @@ def compute_with_and_counter_heroes_for_each_pos(heronames: List[str],
     return output_syne_dict, output_counter_dict, output_good_against_dict
 
 
-def compute_associated_ban_suggestion_first_round(suggested_hero_pick_dict, suggest_num = 5):
+def compute_associated_opposite_suggestion_first_round(suggested_hero_pick_dict, suggest_num = 5):
     # suggested_hero_pick_dict[str_pick_choice] = updated_suggested_hero_list
     # output structure : suggested_hero_ban_dict[str_pick_choice] = suggested_ban_hero_list
     suggested_hero_ban_dict = dict()

@@ -27,10 +27,11 @@ HERO_LEN_M_ONE = len(hero_abbrev_df) - 1
 
 # %%
 # test
+# CRUSADER_ARCHON can be removed
 body = """
 {
   heroStats {
-    heroVsHeroMatchup(heroId: 2 bracketBasicIds:[DIVINE_IMMORTAL, LEGEND_ANCIENT, CRUSADER_ARCHON]) {
+    heroVsHeroMatchup(heroId: 2 bracketBasicIds:[DIVINE_IMMORTAL, LEGEND_ANCIENT]) {
       advantage {
         heroId
         with {
@@ -587,6 +588,10 @@ utils.generate_warmup_cache(depth_limit=1)
 # save to preprocess
 src_warmup_dict_fp = os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/depth_limit_1_warmup_cache_dict.pkl")
 dst_warmup_dict_fp = os.path.join(os.path.dirname(__file__), "../records/depth_limit_1_warmup_cache_dict.pkl")
+shutil.copyfile(src_warmup_dict_fp, dst_warmup_dict_fp)
+
+src_warmup_dict_fp = os.path.join(os.path.dirname(__file__), "../../dota_banpick/data/records/depth_limit_1_warmup_cache_dict_captain.pkl")
+dst_warmup_dict_fp = os.path.join(os.path.dirname(__file__), "../records/depth_limit_1_warmup_cache_dict_captain.pkl")
 shutil.copyfile(src_warmup_dict_fp, dst_warmup_dict_fp)
 
 # After all the data processing and saving is done:

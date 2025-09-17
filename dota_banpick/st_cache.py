@@ -56,6 +56,13 @@ def get_hero_csv_data(t_type):
     return df
 
 @st.cache_data
+def get_chinese_name_data():
+    hero_name_fp = os.path.join(record_folder, "hero_chinese_name.csv")
+    df = pd.read_csv(hero_name_fp, header=None)
+    df.columns = ["Name", "Chinese Name"]
+    return df 
+
+@st.cache_data
 def get_name_abbrev_dict():
     hero_abbrev_fp = os.path.join(record_folder, "hero_abbrev.csv")
     
@@ -198,6 +205,21 @@ def load_alpha_beta_cache_dict():
     else:
         cache_dict = singleton_alpha_beta_manager.dict()
         return cache_dict
+    
+@st.cache_resource
+def load_alpha_beta_cache_dict_captain():
+    singleton_alpha_beta_manager = Manager()
+    
+    if os.path.exists(os.path.join(record_folder, 'depth_limit_1_warmup_cache_dict_captain.pkl')):
+        print("Found captain cache dict local file, load it")
+        with open(os.path.join(record_folder, 'depth_limit_1_warmup_cache_dict_captain.pkl'), 'rb') as f:
+            d = pickle.load(f)
+        cache_dict = singleton_alpha_beta_manager.dict(d)
+        return cache_dict
+    else:
+        cache_dict = singleton_alpha_beta_manager.dict()
+        return cache_dict
+    
     
     
 def get_online_image_urls(heronames):
