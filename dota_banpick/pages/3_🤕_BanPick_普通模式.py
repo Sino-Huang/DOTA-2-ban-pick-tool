@@ -512,8 +512,24 @@ if __name__ == "__main__":
                     target_table = pd.DataFrame(
                         st.session_state[f"suggest_ban_table_col_{ind}_table"])
                     # st.dataframe(target_table)
-                    st.markdown(table_with_images(df=target_table, url_columns=list(
-                        target_table.keys())[:2]), unsafe_allow_html=True)
+                    target_table_keys = list(target_table.keys())
+                    target_table_keys_len = len(target_table_keys)
+
+                    image_col_config = dict()
+                    for key in target_table_keys[:-1]:
+                        image_col_config[key] = st.column_config.ImageColumn(
+                            key, help="Image loaded from a URL"
+                        )
+
+                    st.dataframe(
+                        target_table,
+                        column_config=image_col_config,
+                        hide_index=True,
+                    )
+
+
+                    # st.markdown(table_with_images(df=target_table, url_columns=list(
+                    #     target_table.keys())[:2]), unsafe_allow_html=True)
 
             if "bad_picks_for_each_pos" in st.session_state:
                 with combocols[-1]:
@@ -533,7 +549,20 @@ if __name__ == "__main__":
                                 target_bad_table[f'Bad Pos {sugbanind+1}'] = lst
                         target_bad_table = pd.DataFrame(target_bad_table)
                         # st.dataframe(target_bad_table)
-                        st.markdown(table_with_images(df=target_bad_table, url_columns=[f'Bad Pos {sugbanind+1}' for sugbanind in not_picked_inds]), unsafe_allow_html=True)
+                        url_cols = [f'Bad Pos {sugbanind+1}' for sugbanind in not_picked_inds]
+                        url_cols_len = len(url_cols)
+                        image_col_config = dict()
+                        for key in url_cols:
+                            image_col_config[key] = st.column_config.ImageColumn(
+                                key, help="Image loaded from a URL"
+                            )
+                        st.dataframe(
+                            target_bad_table,
+                            column_config=image_col_config,
+                            hide_index=True,
+                        )
+
+                        # st.markdown(table_with_images(df=target_bad_table, url_columns=[f'Bad Pos {sugbanind+1}' for sugbanind in not_picked_inds]), unsafe_allow_html=True)
 
     # ----------------- BAN  LIST --------------------------------
     if 'the_bp_node' in st.session_state:

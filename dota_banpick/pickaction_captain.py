@@ -146,15 +146,14 @@ class StateNodeCaptain:
     def _hero_set(self, hero_name, ind, is_ally):
         """this set method will also update pick round
         """
-        if is_ally:
-            self.ally_heros[ind] = hero_name
-            self.ally_pick_rounds[ind] = self.cur_round
-        else:
-            self.opponent_heros[ind] = hero_name
-            self.opponent_pick_rounds[ind] = self.cur_round
+        if hero_name not in self.ban_lst and hero_name not in self.ally_heros and hero_name not in self.opponent_heros:
+            if is_ally:
+                self.ally_heros[ind] = hero_name
+                self.ally_pick_rounds[ind] = self.cur_round
+            else:
+                self.opponent_heros[ind] = hero_name
+                self.opponent_pick_rounds[ind] = self.cur_round
 
-        # add name to ban list
-        self.ban_lst.add(hero_name)
 
     def add_hero(self, hero_name, is_ally, position):
         """add hero to either ally or opponent
@@ -231,6 +230,12 @@ class StateNodeCaptain:
 
         return self
 
+    def _hero_ban_set(self, hero_name):
+        """this set method will also update pick round
+        """
+        if hero_name not in self.ban_lst and hero_name not in self.ally_heros and hero_name not in self.opponent_heros:
+            self.ban_lst.add(hero_name)
+
     def next_possible_nodes(self, ally_first_round_pick_choice=ALLY_FIRST_ROUND_PICK_CHOICE, oppo_first_round_pick_choice=OPPO_FIRST_ROUND_PICK_CHOICE):
         """generate a list of possible nodes, based on the current round
         remember the first round pos combo restriction
@@ -245,15 +250,13 @@ class StateNodeCaptain:
         # 3. hero pool restricted
 
         is_ally_next_turn = None
-        is_next_a_big_turn = None
+        is_next_a_big_turn = 0
 
-        order_code = CAPTAIN_BP_ORDER[self.cur_round]
-        _, side_code, action_code = order_code.split(' ')
 
-        if len(CAPTAIN_BP_ORDER) < self.cur_round + 1:
+        if len(CAPTAIN_BP_ORDER) < self.cur_round:
             next_order_code = None
         else:
-            next_order_code = CAPTAIN_BP_ORDER[self.cur_round + 1]
+            next_order_code = CAPTAIN_BP_ORDER[self.cur_round]
 
         if next_order_code is not None:
             _, next_side_code, next_action_code = next_order_code.split(' ')
@@ -261,10 +264,10 @@ class StateNodeCaptain:
             next_side_code, next_action_code = None, None
 
         # further think about next next turn
-        if len(CAPTAIN_BP_ORDER) < self.cur_round + 2:
+        if len(CAPTAIN_BP_ORDER) < self.cur_round + 1:
             next_next_order_code = None
         else:
-            next_next_order_code = CAPTAIN_BP_ORDER[self.cur_round + 2]
+            next_next_order_code = CAPTAIN_BP_ORDER[self.cur_round + 1]
         if next_next_order_code is not None:
             _, next_next_side_code, next_next_action_code = next_next_order_code.split(' ')
         else:
@@ -272,9 +275,12 @@ class StateNodeCaptain:
 
         # determine if is_next_a_big_turn is a big turn (meaning next_side_code same as next_next_side_code and they are not None)
         if next_side_code is not None and next_side_code == next_next_side_code:
-            is_next_a_big_turn = True
+            if next_action_code == next_next_action_code:
+                is_next_a_big_turn = 1 # means two picks or two bans
+            else:
+                is_next_a_big_turn = 2 # means a pick and a ban
         else:
-            is_next_a_big_turn = False
+            is_next_a_big_turn = 0
 
 
         if next_side_code == self.ally_id:
@@ -353,48 +359,36 @@ class StateNodeCaptain:
 
         # check available combo
         # make copy first and then use add hero function in the new instance
-        next_round = self.cur_round + 1
+        next_round = self.cur_round
         # structure: {pick_choice: [(hero_1, hero_2)]}, later flatten it to have list of nodes
         pick_choice_combo_dict = None
 
-        if next_action_code == 'P':
+        if next_action_code == 'P' or is_next_a_big_turn == 2:
             pick_choice_combo_dict = dict() # ! pick_choice_combo_dict control the possible next nodes
             # case 1: big turn
             # case 2: small turn
-            if is_next_a_big_turn:
+            available_pos_lst = []  # natural dota position number 1-5
+            for ind in range(len(hero_list)):
+                if hero_list[ind] is None:
+                    available_pos_lst.append(ind + 1)
+
+            if is_next_a_big_turn in [0,2]:
                 # means it must be small turn
                 # get the last available pos
                 # you need to check what pos combo is available
-                available_pos_lst = [] 
-                if is_ally_next_turn:
-                    for sublist in ally_first_round_pick_choice:
-                        available_pos_lst.extend(sublist)
-                else:
-                    for sublist in oppo_first_round_pick_choice:
-                        available_pos_lst.extend(sublist)
+             
                 available_pos_lst = sorted(list(set(available_pos_lst)))
                 round_pick_choice = list(
                     itertools.combinations(available_pos_lst, 1))
-                
-
+            elif is_next_a_big_turn == 1:
+                # you need to check what pos combo is available
+       
+                available_pos_lst = sorted(available_pos_lst)
+                round_pick_choice = list(
+                        itertools.combinations(available_pos_lst, 2))
 
             else:
-                # you need to check what pos combo is available
-                available_pos_lst = []  # natural dota position number 1-5
-                for ind in range(len(hero_list)):
-                    if hero_list[ind] is None:
-                        available_pos_lst.append(ind + 1)
-            
-                available_pos_lst = sorted(available_pos_lst)
-                # check if big or small turn
-                if is_next_a_big_turn:
-                    round_pick_choice = list(
-                        itertools.combinations(available_pos_lst, 2))
-                else:
-                    # get the last available pos
-                    # you need to check what pos combo is available
-                    round_pick_choice = list(
-                        itertools.combinations(available_pos_lst, 1))
+                raise ValueError("invalid is_next_a_big_turn value")
                     
             # you can only pick under restriction
             for pick_choice in round_pick_choice:
@@ -411,7 +405,7 @@ class StateNodeCaptain:
         # consider ban combos, consider paired_hero_list 
 
         ban_choice_combo_dict = None
-        if next_action_code == 'B':
+        if next_action_code == 'B' or is_next_a_big_turn == 2:
             ban_choice_combo_dict = dict()
             # you need to check what pos combo is available
             available_pos_lst = []  # natural dota position number 1-5
@@ -421,12 +415,20 @@ class StateNodeCaptain:
         
             available_pos_lst = sorted(available_pos_lst)
 
-            if next_round == 1:
+
+            if next_round <= 1 and self.if_bp_first:
+                round_ban_choice = list(
+                itertools.combinations(available_pos_lst, 2))
+            elif next_round <= 2 and (not self.if_bp_first):
                 round_ban_choice = list(
                 itertools.combinations(available_pos_lst, 2))
             else:
-                round_ban_choice = list(
-                    itertools.combinations(available_pos_lst, 1))
+                if is_next_a_big_turn == 1:
+                    round_ban_choice = list(
+                        itertools.combinations(available_pos_lst, 2))
+                else:
+                    round_ban_choice = list(
+                        itertools.combinations(available_pos_lst, 1))
             
             # if next round < 9, then remove (1, 4), (3, 5), (4, 5) combo
             if next_round < 9:
@@ -448,65 +450,70 @@ class StateNodeCaptain:
 
         output_next_nodes_dict = dict()
         node_expansion_count = 0
-        if pick_choice_combo_dict is not None: # ! pick turn
-            for str_pos_pick_choice, combo_list in pick_choice_combo_dict.items():
-                # # ! --sort the pick_choice_combo_dict may/not help pruning, but trade off between pruning out and sorting ---
-                # def measure_counter(combo):
-                #     if len(paired_hero_list) > 0:
-                #         # random measure
-                #         t_ind_hero = random.randint(0,1)
-                #         t_ind_pair = random.randint(0,len(paired_hero_list)-1)
-                #         return counter_rate_matrix[combo[t_ind_hero]][paired_hero_list[t_ind_pair]]
-                #     elif len(combo) == 2:
-                #         return with_winrate_matrix[combo[0]][combo[1]]
-                #     else:
-                #         return 0.0
-                # if len(combo_list[0]) == 2:
-                #     combo_list = sorted(combo_list, key=measure_counter, reverse=True)
-                #     pick_choice_combo_dict[str_pos_pick_choice] = combo_list # store back
-                # # ! -----------------------------------------------------
+        combo_dict_list =[]
+        if pick_choice_combo_dict is not None:
+            combo_dict_list.append(pick_choice_combo_dict)
+        if ban_choice_combo_dict is not None:
+            combo_dict_list.append(ban_choice_combo_dict)
 
-                output_next_nodes_dict[str_pos_pick_choice] = []
-                pos_pick_choice = eval(str_pos_pick_choice)  # type: tuple
-                for combo in combo_list:  # combo_list is [(hero_a, hero_b)]
-                    # create new node
-                    new_node = self.__copy__()
-                    # new node cur round will be next round if small turn, or next next round if big turn
-                    if is_next_a_big_turn:
-                        new_node.cur_round = next_round + 1
-                    else:
-                        new_node.cur_round = next_round
-                    for ind, pos in enumerate(pos_pick_choice):
+        assert len(combo_dict_list) > 0, "both pick and ban choice combo dict are None"
 
+        # know which one first 
+
+        if len(combo_dict_list) == 2:
+            if next_action_code == 'P': # pick first then ban
+                first_dict = pick_choice_combo_dict
+                second_dict = ban_choice_combo_dict
+            else: # ban first then pick
+                first_dict = ban_choice_combo_dict
+                second_dict = pick_choice_combo_dict
+        else:
+            first_dict = combo_dict_list[0]
+            second_dict = None
+
+        assert first_dict is not None, "first dict cannot be None"
+      
+        for str_pos_choice, combo_list in first_dict.items():
+            output_next_nodes_dict[str_pos_choice] = []
+            pos_choice = eval(str_pos_choice)  # type: tuple
+            for combo in combo_list:  # combo_list is [(hero_a, hero_b)]
+                # create new node
+                new_node = self.__copy__()
+                # new node cur round will be next round if small turn, or next next round if big turn
+                
+                if next_action_code == 'P': 
+                    for ind, pos in enumerate(pos_choice):
                         # faster due to no checking
                         new_node._hero_set(combo[ind], pos-1, is_ally_next_turn)
+                else:
+                    for combo_ele in combo:
+                        new_node._hero_ban_set(combo_ele)
 
-                    output_next_nodes_dict[str_pos_pick_choice].append(new_node)
-                    node_expansion_count += 1
-            logging.info(f"node expansion with size {node_expansion_count}")
+                # add ban if it is a big turn with ban
+                if second_dict is not None:
+                    for str_pos_choice_2, combo_list_2 in second_dict.items():
+                        pos_choice_2 = eval(str_pos_choice_2)  # type: tuple
+                        for combo_2 in combo_list_2:  # combo_list is [(hero_a, hero_b)]
+                            if next_next_action_code == 'P': 
+                                for ind, pos in enumerate(pos_choice_2):
+                                    new_node._hero_set(combo_2[ind], pos-1, is_ally_next_turn)
+                            else:
+                                for combo_ele in combo_2:
+                                    new_node._hero_ban_set(combo_ele)
 
-            return output_next_nodes_dict, pick_choice_combo_dict
-        else: 
-            assert ban_choice_combo_dict is not None
-            for str_pos_ban_choice, combo_list in ban_choice_combo_dict.items():
-                output_next_nodes_dict[str_pos_ban_choice] = []
-                pos_ban_choice = eval(str_pos_ban_choice)  # type: tuple
-                for combo in combo_list:  # combo_list is [(hero_a, hero_b)]
-                    # create new node
-                    new_node = self.__copy__()
-                    # new node cur round will be next round if small turn, or next next round if big turn
-                    if is_next_a_big_turn:
-                        new_node.cur_round = next_round + 1
-                    else:
-                        new_node.cur_round = next_round
-                    for ind, pos in enumerate(pos_ban_choice):
+                # update cur round at very last
+                if is_next_a_big_turn != 0:
+                    new_node.cur_round = next_round + 1
+                else:
+                    new_node.cur_round = next_round
                         
-                        # faster due to no checking
-                        new_node.ban_hero(combo[ind])
-                    output_next_nodes_dict[str_pos_ban_choice].append(new_node)
-                    node_expansion_count += 1
-            logging.info(f"node expansion with size {node_expansion_count}")
-            return output_next_nodes_dict, ban_choice_combo_dict
+
+                output_next_nodes_dict[str_pos_choice].append(new_node)
+                node_expansion_count += 1
+        logging.info(f"node expansion with size {node_expansion_count}")
+
+        return output_next_nodes_dict, first_dict
+
 
     def get_ally_hero_list(self):
         return copy.deepcopy(self.ally_heros)

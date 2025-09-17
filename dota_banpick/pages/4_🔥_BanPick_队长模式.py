@@ -23,7 +23,7 @@ from subprocess import PIPE
 import time
 
 IMAGE_WIDTH = 11
-SUGGEST_NUM = 5
+SUGGEST_NUM = 11
 
 def pipe_alphabeta(*thein):
     start_time = time.time()
@@ -170,10 +170,10 @@ def form_pick_ban_table(banpick_list, opposite_list, str_pick_choice):
     if side_code == ally_id:
         if action_code == 'B':
             last_col_name = "若无法Ban,用这些来克制"
-            prefix_name = " 推荐Ban"
+            prefix_name = "🉑Ban"
         else:
             last_col_name = "推荐Ban掉"
-            prefix_name = " 推荐Pick"
+            prefix_name = " 🉑Pick"
     else:
         last_col_name = "奇怪的情况"
         prefix_name = " 奇怪的情况"
@@ -300,7 +300,7 @@ def update_ban_hero_multiselect():
         st.session_state['raw_df']['Image filename'].loc[list(st.session_state.the_bp_node.ban_lst)].str.strip())
     img_array = get_image_data(imgfilenames)
     st.session_state['ban_image_args_list'] = list(
-        zip(img_array, [None for _ in range(len(banlist))]))
+        zip(img_array, [None for _ in range(len(list(st.session_state.the_bp_node.ban_lst)))]))
     # * --- end handle images
 
     _, side_code, action_code = CAPTAIN_BP_ORDER[st.session_state.the_bp_node.cur_round].split(' ')
@@ -548,7 +548,20 @@ if __name__ == "__main__":
 
                     target_table_keys = list(target_table.keys())
                     target_table_keys_len = len(target_table_keys)
-                    st.markdown(table_with_images(df=target_table, url_columns=target_table_keys[:target_table_keys_len-1]), unsafe_allow_html=True)
+
+                    image_col_config = dict()
+                    for key in target_table_keys[:-1]:
+                        image_col_config[key] = st.column_config.ImageColumn(
+                            key, help="Image loaded from a URL"
+                        )
+
+                    st.dataframe(
+                        target_table,
+                        column_config=image_col_config,
+                        hide_index=True,
+                    )
+
+                    # st.markdown(table_with_images(df=target_table, url_columns=target_table_keys[:target_table_keys_len-1]), unsafe_allow_html=True)
 
    
 
@@ -587,14 +600,14 @@ if __name__ == "__main__":
             code_round, code_side, code_bp = CAPTAIN_BP_ORDER[st.session_state.the_bp_node.cur_round].split(" ")
             if st.session_state.the_bp_node.ally_id == code_side:
                 if code_bp == 'B':
-                    st.title(f"第{code_round}轮，我方Ban人")
+                    st.subheader(f"第{code_round}轮，我方Ban人")
                 else:
-                    st.title(f"第{code_round}轮，我方选人")
+                    st.subheader(f"第{code_round}轮，我方选人")
             else:
                 if code_bp == 'B':
-                    st.title(f"第{code_round}轮，对方Ban人")
+                    st.subheader(f"第{code_round}轮，对方Ban人")
                 else:
-                    st.title(f"第{code_round}轮，对方选人")
+                    st.subheader(f"第{code_round}轮，对方选人")
     
     # ----------------- BAN  LIST --------------------------------
 

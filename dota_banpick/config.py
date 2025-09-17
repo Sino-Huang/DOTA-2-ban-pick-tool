@@ -74,7 +74,7 @@ with open(lane_rate_dict_fp, 'rb') as f:
 #   'Pos 5 Pick Rate': 0.017984774442339018}}
 
 ACTIVATE_SAVING_CACHE = True
-DEPTH_LIMIT_CAPTAIN = 1 # captain mode, we can go deeper because we have more time to think
+DEPTH_LIMIT_CAPTAIN = 0 # captain mode, we can go deeper because we have more time to think
 
 
 with open(os.path.join(os.path.dirname(__file__), "update_time.txt"), 'r') as f:
@@ -106,7 +106,7 @@ OPPO_FIRST_ROUND_PICK_CHOICE = [ # need to prevent from picking top meta heroes 
     [1, 3]
 ]
 
-EARLY_STAGE_NOT_CONSIDER_BAN_COMBO = [(1,4), (3,5), (4,5), (1,2)]
+EARLY_STAGE_NOT_CONSIDER_BAN_COMBO = [(1,3), (1,4), (3,5), (1,2)]
 
 
 PRUNE_WORST_HERO_NUM = 5
