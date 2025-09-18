@@ -23,7 +23,7 @@ from subprocess import PIPE
 import time
 
 IMAGE_WIDTH = 11
-SUGGEST_NUM = 11
+SUGGEST_NUM = 5
 
 def pipe_alphabeta(*thein):
     start_time = time.time()
@@ -166,17 +166,14 @@ def form_pick_ban_table(banpick_list, opposite_list, str_pick_choice):
     cur_round = st.session_state.the_bp_node.cur_round
     code = CAPTAIN_BP_ORDER[cur_round]
     _, side_code, action_code = code.split(' ')
-    ally_id = st.session_state.the_bp_node.ally_id
-    if side_code == ally_id:
-        if action_code == 'B':
-            last_col_name = "若无法Ban,用这些来克制"
-            prefix_name = "🉑Ban"
-        else:
-            last_col_name = "推荐Ban掉"
-            prefix_name = " 🉑Pick"
+    # ally_id = st.session_state.the_bp_node.ally_id
+    if action_code == 'B':
+        last_col_name = "若无法Ban,用这些来克制"
+        prefix_name = "🉑Ban"
     else:
-        last_col_name = "奇怪的情况"
-        prefix_name = " 奇怪的情况"
+        last_col_name = "推荐Ban掉"
+        prefix_name = " 🉑Pick"
+  
 
     cols_name.append(last_col_name)
     new_cols_name = [x + prefix_name for x in cols_name[:-1]]
@@ -528,6 +525,39 @@ if __name__ == "__main__":
         confirmteambut = st.button(
             "开始BP", type="primary", use_container_width=True, on_click=ready_to_bp_on_click)
 
+
+    if 'the_bp_node' not in st.session_state:
+        # add instruction 
+
+        st.markdown("""
+## DOTA2 队长模式BP模拟器使用指南
+### 一、前期准备（侧边栏操作）
+1. **分配玩家与位置**：侧边栏会显示缓存的玩家列表，为每位玩家选择对应位置（如“1号位 Carry”），系统会自动加载该玩家的英雄池。
+2. **选择BP顺序**：在“BP顺序”处选择“先手”（先Ban先选）或“后手”（后Ban后选），系统会基于所选顺序提供建议。
+3. **启动BP**：确认配置后，点击“开始BP”按钮，进入BP阶段。
+
+
+### 二、BP阶段核心操作
+#### 1. 查看当前状态
+- 页面会显示**当前轮次**（如“第1轮，我方Ban人”）和**下一步操作**，明确当前该谁进行Ban/Pick。
+- 顶部表格会展示AI生成的位置组合建议（如“位置组合 [1,2]”），包含推荐Ban/Pick的英雄及克制英雄。
+
+#### 2. Ban人操作
+- 当轮次提示“我方Ban人”时，在“请选择要Ban英雄”下拉框中，勾选想要Ban的英雄，系统会自动更新Ban列表并刷新AI建议。
+- 已Ban英雄会在“已Ban英雄池”中分类展示（我方Ban/对方Ban），方便查看禁用记录。
+
+#### 3. Pick人操作
+- **我方Pick**：当轮次提示“我方选人”时，在“Ally 1号位/2号位...”对应的下拉框中，为每个位置选择英雄，选择后会在“Display”区域显示已选英雄。
+- **模拟对方Pick**：当轮次提示“对方选人”时，在“模拟输入对方已选英雄”下拉框中，勾选对方可能选择的英雄，系统会基于此更新克制建议。
+
+
+### 三、关键提示
+1. 若英雄池数据缺失，系统会启用预设英雄池，可后续在“Edit Hero Pool”页面补充玩家英雄池数据。
+2. 若遇到界面异常，按键盘“F5”刷新页面，重新从“前期准备”步骤开始即可。
+3. AI建议表格中，“🉑Ban/🉑Pick”列展示推荐英雄（带图片），最后一列展示“若无法Ban/推荐Ban掉”的克制英雄（中文名称）。
+""")
+                    
+
     # ---------------Table Placeholder -------------------
     if "suggest_header_placeholder" in st.session_state:
         st.subheader(st.session_state.suggest_header_placeholder)
@@ -717,11 +747,11 @@ if __name__ == "__main__":
                 ban_display_cols = st.columns(2)
                 if len(ally_Ban_lst)> 0: 
                     with ban_display_cols[0]:
-                        st.subheader("我方Ban人")
+                        st.text("我方Ban人")
                         row_display_component(
                             ally_Ban_lst, 18, show_image_compo)
                 if len(oppo_Ban_lst) > 0:
                     with ban_display_cols[1]:
-                        st.subheader("对方Ban人")
+                        st.text("对方Ban人")
                         row_display_component(
                             oppo_Ban_lst, 18, show_image_compo)

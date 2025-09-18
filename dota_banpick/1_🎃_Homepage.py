@@ -155,7 +155,14 @@ if __name__ == "__main__":
     except StreamlitAPIException:
         pass
     # _ = load_alpha_beta_cache_dict()
-    st.header("DOTA2 Ban Pick Tool by Sino-CICI")
+    st.header("DOTA2 BP 模拟和战队数据统计 By Sino-CICI")
+    st.subheader("微信: c2530718091")
+    st.warning("这是这两三天我改进出来的Demo,功能还不够完善，我还没来得及翻译，我可以每周根据你们提的要求往这个网站里面添加或修改你们所需的功能。我也可以逐渐添加包括但不限于针对不同战队的BP推荐，各个战队视野和偏好统计等其他功能。希望可以助力CN DOTA")
+
+    with st.expander("快速导航 Quick Links", expanded=True):
+        st.page_link("pages/6_😎_阵容克制.py", label="😎英雄克制关系")
+        st.page_link("pages/4_🔥_BanPick_队长模式.py", label="🔥BP模拟器")
+
     # write a general description about this web app
     st.text("This is a web app for DOTA2 Ban Pick Tool, you can use it to get some drafting suggestions for DOTA2 games.")
     st.text("""Legitimacy and Fair Play Clarification:
