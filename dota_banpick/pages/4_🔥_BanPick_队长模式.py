@@ -240,7 +240,12 @@ def ready_to_bp_on_click():
         del st.session_state[f"suggest_ban_table_col_{tt}_table"]
         del st.session_state[f"suggest_ban_table_col_{tt}_table_header"]
         tt += 1    
-    
+
+    keylist = list(st.session_state.keys())
+    for key in keylist:
+        if 'oppo_manual_pos_radio' in key:
+            del st.session_state[key]
+ 
     st.session_state.all_hero_list = get_heros()
     st.session_state.the_bp_node = StateNodeCaptain(
         *st.session_state["ally_hero_pools"], *st.session_state["opponent_hero_pools"], if_bp_first=bool(st.session_state['banpick_order']==0)
@@ -437,7 +442,14 @@ def ally_pick_select(select_key, ally_ind):
             del st.session_state[f"suggest_ban_table_col_{ind+1}_table_header"]
             ind += 1
 
-
+def manual_change_oppo_pos(hero_name, key):
+    # find the pos_ind of that hero
+    curr_pos_ind = st.session_state.the_bp_node.opponent_heros.index(hero_name)
+    want_pos_ind = int(st.session_state[key].split(' ')[-1]) - 1
+    if curr_pos_ind != want_pos_ind:
+        # call reset_hero_position
+        st.session_state.the_bp_node.reset_hero_position(
+            curr_pos_ind, want_pos_ind, is_ally=False)
 
 
 if __name__ == "__main__":
@@ -691,7 +703,23 @@ if __name__ == "__main__":
                             key="oppo_multiselect", placeholder="Pick opponent heroes",
                             on_change=update_pick_hero_oppo_multiselect)
 
-            
+        with oppo_pick_column:
+            # add manual set hero position for opponent (given that currently we just guess their pos, but we can manually set them)
+            with st.expander("手动设置对方英雄位置", expanded=False):
+                manual_oppo_pos_cols = st.columns(5)
+                for col_ix, hero_name in enumerate(st.session_state.the_bp_node.sorted_opponent_heros):
+                    pos_ind = st.session_state.the_bp_node.opponent_heros.index(hero_name)
+                    with manual_oppo_pos_cols[col_ix]:
+                        oppo_manual_pos_radio = st.radio(
+                                hero_name,
+                                ['Pos 1', 'Pos 2', 'Pos 3', 'Pos 4', 'Pos 5'],
+                                index=pos_ind,
+                                key=f'{hero_name}_oppo_manual_pos_radio_special_key',
+                                on_change=manual_change_oppo_pos,
+                                args=(hero_name, f'{hero_name}_oppo_manual_pos_radio_special_key')
+                            )
+                    
+
 
     # ------------ Display ---------------------
         st.subheader("Display")

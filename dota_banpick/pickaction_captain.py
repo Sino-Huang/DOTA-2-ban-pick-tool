@@ -27,17 +27,30 @@ from dota_banpick.config import ALLY_FIRST_ROUND_PICK_CHOICE, OPPO_FIRST_ROUND_P
 from dota_banpick.config import PRUNE_WORST_HERO_NUM, EARLY_STAGE_NOT_CONSIDER_BAN_COMBO
 from scipy.optimize import linear_sum_assignment
 
-def maximum_assignment_heroes(hero_list_full, hero_round_list_full):
-    hero_list_full_filtered = [x for x in hero_list_full if x is not None]
+def maximum_assignment_heroes(hero_list_full, hero_round_list_full, fix_pos_list = None):
+    if fix_pos_list is None:
+        fix_pos_list = [False for _ in range(5)]
+    hero_list_full_filtered = [] 
+    # do not consider already fixed pos
+    for ind, x in enumerate(hero_list_full):
+        if not fix_pos_list[ind]:
+            if x is not None:
+                hero_list_full_filtered.append(x)
+
+    pos_pick_rate_col_names_default = ['Pos 1 Pick Rate', 'Pos 2 Pick Rate', 'Pos 3 Pick Rate', 'Pos 4 Pick Rate', 'Pos 5 Pick Rate']
+    # remove the one if fix pos is True
+    pos_pick_rate_col_names = [] 
+    for ind, x in enumerate(pos_pick_rate_col_names_default):
+        if not fix_pos_list[ind]:
+            pos_pick_rate_col_names.append(x)
+
     G = []
     for hero in hero_list_full_filtered:
-        lang_scores = [
-            lane_rate_info_dict[hero]['Pos 1 Pick Rate'],
-            lane_rate_info_dict[hero]['Pos 2 Pick Rate'],
-            lane_rate_info_dict[hero]['Pos 3 Pick Rate'],
-            lane_rate_info_dict[hero]['Pos 4 Pick Rate'],
-            lane_rate_info_dict[hero]['Pos 5 Pick Rate'],
-        ]
+        
+        lang_scores = [] 
+        for col_name in pos_pick_rate_col_names:
+            print(hero, col_name)
+            lang_scores.append(lane_rate_info_dict[hero][col_name])
         G.append(lang_scores)
     
     G = np.asarray(G, dtype=np.float32)        
@@ -47,9 +60,17 @@ def maximum_assignment_heroes(hero_list_full, hero_round_list_full):
     output_hero_lst = [None for _ in range(5)]
     for ind, heroname in enumerate(hero_list_full_filtered):
         hrond = hero_round_list_full[hero_list_full.index(heroname)]
-        the_pos = col_ind[ind]
+        the_pos_raw = col_ind[ind]
+        # check actual pos from pos_pick_rate_col_names
+        the_pos_str = pos_pick_rate_col_names[the_pos_raw]
+        the_pos = int(the_pos_str.split(' ')[1]) - 1 # pythonic index
         output_hero_lst[the_pos] = heroname
         output_round_lst[the_pos] = hrond
+    # add back the fixed pos
+    for ind, x in enumerate(hero_list_full):
+        if fix_pos_list[ind]:
+            output_hero_lst[ind] = hero_list_full[ind]
+            output_round_lst[ind] = hero_round_list_full[ind]
 
     return output_hero_lst, output_round_lst
 
@@ -84,6 +105,9 @@ class StateNodeCaptain:
                                     opponent_pos_4_hero_pool,
                                     opponent_pos_5_hero_pool,]
         
+        self.fix_pos_ally = [False for _ in range(5)]
+        self.fix_pos_opponent = [False for _ in range(5)]
+        
         self.bp_order = CAPTAIN_BP_ORDER
         self.if_bp_first = if_bp_first
         if self.if_bp_first:
@@ -100,6 +124,9 @@ class StateNodeCaptain:
         self.ally_heros = [None for _ in range(5)]
 
         self.opponent_heros =  [None for _ in range(5)]
+
+        self.sorted_ally_heros = []
+        self.sorted_opponent_heros = []
 
         # 1 means 1st round bp, in Captain mode, we have 24 rounds, 0 means not start yet,
         self.cur_round = 0
@@ -118,6 +145,10 @@ class StateNodeCaptain:
         new_node.opponent_heros = copy.deepcopy(self.opponent_heros)
         new_node.cur_round = self.cur_round
         new_node.ban_lst = copy.deepcopy(self.ban_lst)
+        new_node.fix_pos_ally = copy.deepcopy(self.fix_pos_ally)
+        new_node.fix_pos_opponent = copy.deepcopy(self.fix_pos_opponent)
+        new_node.sorted_ally_heros = copy.deepcopy(self.sorted_ally_heros)
+        new_node.sorted_opponent_heros = copy.deepcopy(self.sorted_opponent_heros)
         return new_node
 
     def ban_hero(self, ban_hero_name):
@@ -213,18 +244,22 @@ class StateNodeCaptain:
             
         # hero update
         self._hero_set(hero_name, position_index, is_ally)
+        if side_code == self.ally_id:
+            self.sorted_ally_heros.append(hero_name)
+        else:
+            self.sorted_opponent_heros.append(hero_name)
 
         if auto_guess_flag:
             if is_ally:
                 hero_list, hero_round_list = maximum_assignment_heroes(
-                    self.get_ally_hero_list(), self.get_ally_hero_pick_round_list())
+                    self.get_ally_hero_list(), self.get_ally_hero_pick_round_list(), self.fix_pos_ally)
                 self.ally_heros = hero_list
                 self.ally_pick_rounds = hero_round_list
 
             else:
                 # TODO this can add heuristic, e.g., 根据战队的之前的位置习惯进行猜测英雄位置
                 hero_list, hero_round_list = maximum_assignment_heroes(
-                    self.get_opponent_hero_list(), self.get_opponent_hero_pick_round_list())
+                    self.get_opponent_hero_list(), self.get_opponent_hero_pick_round_list(), self.fix_pos_opponent)
                 self.opponent_heros = hero_list
                 self.opponent_pick_rounds = hero_round_list
 
@@ -235,6 +270,55 @@ class StateNodeCaptain:
         """
         if hero_name not in self.ban_lst and hero_name not in self.ally_heros and hero_name not in self.opponent_heros:
             self.ban_lst.add(hero_name)
+
+    def reset_hero_position(self, hero_pos, new_hero_pos, is_ally):
+        """reset hero position, e.g., change hero position
+
+        Args:
+            hero_pos (_type_): _description_
+            is_ally (_type_): _description_
+        """
+        if is_ally:
+            if self.ally_heros[hero_pos] is None:
+                logging.warning(f"Ally pos {hero_pos+1} is empty, cannot reset")
+                return self
+            
+            else:
+                hero_name = self.ally_heros[hero_pos]
+                target_hero_name = self.ally_heros[new_hero_pos]
+                self.ally_heros[new_hero_pos] = hero_name
+                self.ally_heros[hero_pos] = target_hero_name
+                # also swap the pick rounds
+                current_round = self.ally_pick_rounds[hero_pos]
+                target_round = self.ally_pick_rounds[new_hero_pos]
+                self.ally_pick_rounds[new_hero_pos] = current_round
+                self.ally_pick_rounds[hero_pos] = target_round
+                # set fix pos for the new_hero_pos 
+                self.fix_pos_ally[new_hero_pos] = True
+                target_pos_fix_value = self.fix_pos_ally[new_hero_pos]
+                self.fix_pos_ally[new_hero_pos] = True
+                return self
+            
+        else:
+            if self.opponent_heros[hero_pos] is None:
+                logging.warning(f"Oppo pos {hero_pos+1} is empty, cannot reset")
+                return self
+            else:
+                hero_name = self.opponent_heros[hero_pos]
+                target_hero_name = self.opponent_heros[new_hero_pos]
+                self.opponent_heros[new_hero_pos] = hero_name
+                self.opponent_heros[hero_pos] = target_hero_name
+                # also swap the pick rounds
+                current_round = self.opponent_pick_rounds[hero_pos]
+                target_round = self.opponent_pick_rounds[new_hero_pos]
+                self.opponent_pick_rounds[new_hero_pos] = current_round
+                self.opponent_pick_rounds[hero_pos] = target_round
+                # set fix pos for the new_hero_pos
+                target_pos_fix_value = self.fix_pos_opponent[new_hero_pos]
+                self.fix_pos_opponent[new_hero_pos] = True
+                self.fix_pos_opponent[hero_pos] = target_pos_fix_value
+                return self
+
 
     def next_possible_nodes(self, ally_first_round_pick_choice=ALLY_FIRST_ROUND_PICK_CHOICE, oppo_first_round_pick_choice=OPPO_FIRST_ROUND_PICK_CHOICE):
         """generate a list of possible nodes, based on the current round
