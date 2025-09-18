@@ -99,3 +99,9 @@ Go to [Youtube Video Demo](https://youtu.be/krG0LuIItCw) to know how to use the 
 
 5. Privacy Respected:
   - We highly respect user privacy and game ethics. No personal or game data is accessed, collected, or shared through the use of this tool.
+
+
+  ## Tips to stop the app
+  ```bash
+  sudo kill -9 $(sudo lsof -t -i:80)
+  ```

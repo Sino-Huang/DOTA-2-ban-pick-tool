@@ -23,9 +23,9 @@ from subprocess import PIPE
 import time
 
 IMAGE_WIDTH = 11
-SUGGEST_NUM = 5
+SUGGEST_NUM = 7
 
-def pipe_alphabeta(*thein):
+def pipe_alphabeta(bpnode, init_depth, alpha, beta, maxplayer, depth_limit, if_use_cache):
     start_time = time.time()
     # subprocess version
     # thein = pickle.dumps(thein)
@@ -36,7 +36,17 @@ def pipe_alphabeta(*thein):
     # normal version
     ab_cache_dict = load_alpha_beta_cache_dict_captain()
     # ab_cache_dict = None
-    output = alphabeta(*thein, ab_cache_dict)
+    # ! special rule
+    # if current cound >= 14, we increase depth limit 
+    if bpnode.cur_round >= 14 and bpnode.cur_round <= 17 and depth_limit < 2:
+        depth_limit += 0
+
+    if bpnode.cur_round >= 18 and depth_limit < 2:
+        depth_limit += 0
+
+    print("Running AlphaBeta with depth limit:", depth_limit)
+    print("Calculate for Round:", CAPTAIN_BP_ORDER[bpnode.cur_round])
+    output = alphabeta(bpnode, init_depth, alpha, beta, maxplayer, depth_limit, if_use_cache, ab_cache_dict)
     end_time = time.time()
     st.toast(f"Process Time: {end_time - start_time:3f} sec.")
     return output 
@@ -305,6 +315,9 @@ def update_ban_hero_multiselect():
         zip(img_array, [None for _ in range(len(list(st.session_state.the_bp_node.ban_lst)))]))
     # * --- end handle images
 
+    if st.session_state.the_bp_node.cur_round >= len(CAPTAIN_BP_ORDER):
+        return # means we have finished all the rounds
+
     _, side_code, action_code = CAPTAIN_BP_ORDER[st.session_state.the_bp_node.cur_round].split(' ')
 
     if side_code == st.session_state.the_bp_node.ally_id:
@@ -361,6 +374,9 @@ def update_pick_hero_oppo_multiselect():
         st.session_state.info_placeholder = (
             "尝试克制对方英雄，并且避免我方英雄被克制")
         
+        if st.session_state.the_bp_node.cur_round >= len(CAPTAIN_BP_ORDER):
+            return # means we have finished all the rounds
+
         # case: if now the round is ours 
         _, side_code, action_code = CAPTAIN_BP_ORDER[st.session_state.the_bp_node.cur_round].split(' ')
         if side_code == st.session_state.the_bp_node.ally_id:
@@ -403,6 +419,9 @@ def ally_pick_select(select_key, ally_ind):
     
     st.session_state.the_bp_node.add_hero(
         selectedhero, True, ally_ind+1)
+    
+    if st.session_state.the_bp_node.cur_round >= len(CAPTAIN_BP_ORDER):
+        return # means we have finished all the rounds
     
     _, side_code, action_code = CAPTAIN_BP_ORDER[st.session_state.the_bp_node.cur_round].split(' ')
     if side_code == st.session_state.the_bp_node.ally_id:
@@ -612,9 +631,9 @@ if __name__ == "__main__":
         cur_a_pick_num = 5 - st.session_state.the_bp_node.ally_heros.count(None)       
         cur_o_pick_num = 5 - st.session_state.the_bp_node.opponent_heros.count(None)   
         cur_round = st.session_state.the_bp_node.cur_round
-        if cur_round >= 0:
+        if cur_round >= 0 and cur_round < len(CAPTAIN_BP_ORDER):
             order_code = CAPTAIN_BP_ORDER[cur_round]
-            next_order_code = CAPTAIN_BP_ORDER[cur_round + 1] if cur_round < len(CAPTAIN_BP_ORDER) else None
+            next_order_code = CAPTAIN_BP_ORDER[cur_round + 1] if cur_round + 1 < len(CAPTAIN_BP_ORDER) else None
             code_round, code_side, code_bp = order_code.split(" ")
             if code_side == 'A':
                 code_side = 0 
@@ -654,71 +673,73 @@ if __name__ == "__main__":
     # ----------------- BAN  LIST --------------------------------
 
     if "suggest_header_placeholder" in st.session_state:
-        code_round, code_side, code_bp = order_code.split(" ")
-        if code_bp == 'B':
-            st.subheader("（激活）请在此处Ban英雄")
-        
-        bancols = st.columns(2)
-        if code_bp == 'B':
-            with bancols[0]:
-                st.multiselect("请选择要Ban英雄",
-                            options=st.session_state['name_abbrev_dict_keys_list'],
-                            format_func=lambda x: st.session_state['name_abbrev_dict'][x],
-                            key="ban_multiselect", placeholder="Ban a hero",
-                            on_change=update_ban_hero_multiselect)
+        if 'order_code' in locals():
+            code_round, code_side, code_bp = order_code.split(" ")
+            if code_bp == 'B':
+                st.subheader("（激活）请在此处Ban英雄")
+            
+            bancols = st.columns(2)
+            if code_bp == 'B':
+                with bancols[0]:
+                    st.multiselect("请选择要Ban英雄",
+                                options=st.session_state['name_abbrev_dict_keys_list'],
+                                format_func=lambda x: st.session_state['name_abbrev_dict'][x],
+                                key="ban_multiselect", placeholder="Ban a hero",
+                                on_change=update_ban_hero_multiselect)
 
     # -----------------------------------------------------------
     # --------------- Pick -------------------------------
     if "ally_name_list" in st.session_state:
-        code_round, code_side, code_bp = order_code.split(" ")
         ally_name_list = st.session_state.ally_name_list
-        ally_pick_column, oppo_pick_column = st.columns([0.5, 0.5])
-        if code_bp == 'P' and code_side == st.session_state.the_bp_node.ally_id:
-            ally_pick_activated = True
-        else:
-            ally_pick_activated = False
-        if not ally_pick_activated:
-            st.subheader("已选英雄")
-        else:
-            st.subheader("（激活）请选择我方英雄")
-        if ally_pick_activated:   
-            with ally_pick_column:
-                ally_hero_display_cols = st.columns(5)
-                for ally_ind in range(len(ally_hero_display_cols)):
-                    with ally_hero_display_cols[ally_ind]:
-                        st.selectbox(f"Ally {ally_name_list[ally_ind]}",
-                                    options=st.session_state['name_abbrev_dict_keys_list'],
-                                    format_func=lambda x: st.session_state['name_abbrev_dict'][x],
-                                    index=None,
-                                    key=f"hero_pick_selectbox_{ally_name_list[ally_ind]}",
-                                    on_change=ally_pick_select, args=(f"hero_pick_selectbox_{ally_name_list[ally_ind]}", ally_ind))
-        
-        if code_bp == 'P' and code_side == st.session_state.the_bp_node.opponent_id:
-            # it means opponent is picking now
-            with oppo_pick_column:
-                # multiselect box for selecting oppo because we dont know their pos
-                st.multiselect("（激活）模拟输入对方已选英雄",
-                            options=st.session_state['name_abbrev_dict_keys_list'],
-                            format_func=lambda x: st.session_state['name_abbrev_dict'][x],
-                            key="oppo_multiselect", placeholder="Pick opponent heroes",
-                            on_change=update_pick_hero_oppo_multiselect)
+        if 'order_code' in locals():
+            code_round, code_side, code_bp = order_code.split(" ")
+            ally_pick_column, oppo_pick_column = st.columns([0.5, 0.5])
+            if code_bp == 'P' and code_side == st.session_state.the_bp_node.ally_id:
+                ally_pick_activated = True
+            else:
+                ally_pick_activated = False
+            if not ally_pick_activated:
+                st.subheader("已选英雄")
+            else:
+                st.subheader("（激活）请选择我方英雄")
+            if ally_pick_activated:   
+                with ally_pick_column:
+                    ally_hero_display_cols = st.columns(5)
+                    for ally_ind in range(len(ally_hero_display_cols)):
+                        with ally_hero_display_cols[ally_ind]:
+                            st.selectbox(f"Ally {ally_name_list[ally_ind]}",
+                                        options=st.session_state['name_abbrev_dict_keys_list'],
+                                        format_func=lambda x: st.session_state['name_abbrev_dict'][x],
+                                        index=None,
+                                        key=f"hero_pick_selectbox_{ally_name_list[ally_ind]}",
+                                        on_change=ally_pick_select, args=(f"hero_pick_selectbox_{ally_name_list[ally_ind]}", ally_ind))
+            
+            if code_bp == 'P' and code_side == st.session_state.the_bp_node.opponent_id:
+                # it means opponent is picking now
+                with oppo_pick_column:
+                    # multiselect box for selecting oppo because we dont know their pos
+                    st.multiselect("（激活）模拟输入对方已选英雄",
+                                options=st.session_state['name_abbrev_dict_keys_list'],
+                                format_func=lambda x: st.session_state['name_abbrev_dict'][x],
+                                key="oppo_multiselect", placeholder="Pick opponent heroes",
+                                on_change=update_pick_hero_oppo_multiselect)
 
-        with oppo_pick_column:
-            # add manual set hero position for opponent (given that currently we just guess their pos, but we can manually set them)
-            with st.expander("手动设置对方英雄位置", expanded=False):
-                manual_oppo_pos_cols = st.columns(5)
-                for col_ix, hero_name in enumerate(st.session_state.the_bp_node.sorted_opponent_heros):
-                    pos_ind = st.session_state.the_bp_node.opponent_heros.index(hero_name)
-                    with manual_oppo_pos_cols[col_ix]:
-                        oppo_manual_pos_radio = st.radio(
-                                hero_name,
-                                ['Pos 1', 'Pos 2', 'Pos 3', 'Pos 4', 'Pos 5'],
-                                index=pos_ind,
-                                key=f'{hero_name}_oppo_manual_pos_radio_special_key',
-                                on_change=manual_change_oppo_pos,
-                                args=(hero_name, f'{hero_name}_oppo_manual_pos_radio_special_key')
-                            )
-                    
+            with oppo_pick_column:
+                # add manual set hero position for opponent (given that currently we just guess their pos, but we can manually set them)
+                with st.expander("手动设置对方英雄位置", expanded=False):
+                    manual_oppo_pos_cols = st.columns(5)
+                    for col_ix, hero_name in enumerate(st.session_state.the_bp_node.sorted_opponent_heros):
+                        pos_ind = st.session_state.the_bp_node.opponent_heros.index(hero_name)
+                        with manual_oppo_pos_cols[col_ix]:
+                            oppo_manual_pos_radio = st.radio(
+                                    hero_name,
+                                    ['Pos 1', 'Pos 2', 'Pos 3', 'Pos 4', 'Pos 5'],
+                                    index=pos_ind,
+                                    key=f'{hero_name}_oppo_manual_pos_radio_special_key',
+                                    on_change=manual_change_oppo_pos,
+                                    args=(hero_name, f'{hero_name}_oppo_manual_pos_radio_special_key')
+                                )
+                        
 
 
     # ------------ Display ---------------------

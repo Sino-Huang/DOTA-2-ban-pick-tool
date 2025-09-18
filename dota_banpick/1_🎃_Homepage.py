@@ -307,3 +307,4 @@ p {
                 row_display_component(args_list, show_cntr_image_width_pc, st.session_state['show_pos_hero_ind'] + 1)
             else:
                 row_display_component(args_list, normal_image_width_pc, st.session_state['show_pos_hero_ind'] + 1)
+

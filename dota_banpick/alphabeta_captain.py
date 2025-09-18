@@ -19,7 +19,7 @@ import sys
 import time
 
 from natsort import natsorted
-from dota_banpick.config import ACTIVATE_SAVING_CACHE, PRUNE_WORST_HERO_NUM, SUGGESTION_NUM, counter_rate_matrix, COUNTER_MOST_BONUS
+from dota_banpick.config import ACTIVATE_SAVING_CACHE, PRUNE_WORST_HERO_NUM, SUGGESTION_NUM, counter_rate_matrix, COUNTER_MOST_BONUS, default_hero_pools
 from dota_banpick.pickaction_captain import StateNodeCaptain
 from dota_banpick.heuristic import calculate_heuristic_captain
 from tqdm.auto import tqdm
@@ -222,7 +222,7 @@ def alphabeta(node: StateNodeCaptain, depth, alpha, beta, is_maximizing_player, 
                 break
         if cache_dict is not None and activate_saving_cache and depth == 0:
             cache_dict[str(node)] = (value, suggested_hero_pick_dict)
-
+        # print(f"Value at depth {depth}: {value}, maxplayer: {is_maximizing_player}, round: {node.cur_round}")
         return value, suggested_hero_pick_dict
 
     else:
@@ -279,19 +279,22 @@ def alphabeta(node: StateNodeCaptain, depth, alpha, beta, is_maximizing_player, 
                 break
         if cache_dict is not None and activate_saving_cache:
             cache_dict[str(node)] = (value, None)
+        # print(f"Value at depth {depth}: {value}, maxplayer: {is_maximizing_player}, round: {node.cur_round}")
         return value, None
 
 
 if __name__ == "__main__":
     
-    record_folder = os.path.join(os.path.dirname(__file__), "data/records")
-    warmup_cache_dict_fp = os.path.join(
-        record_folder, f"depth_limit_{1}_warmup_cache_dict.pkl")
-    # load dict    
-    cache_dict_manager = Manager()
-    with open(warmup_cache_dict_fp, 'rb') as f:
-        warmup_cache_dict = pickle.load(f)
-    alpha_beta_cache_dict = cache_dict_manager.dict(warmup_cache_dict)
+    # record_folder = os.path.join(os.path.dirname(__file__), "data/records")
+    # warmup_cache_dict_fp = os.path.join(
+    #     record_folder, f"depth_limit_{1}_warmup_cache_dict_captain.pkl")
+    # # load dict    
+    # cache_dict_manager = Manager()
+    # with open(warmup_cache_dict_fp, 'rb') as f:
+    #     warmup_cache_dict = pickle.load(f)
+    # alpha_beta_cache_dict = cache_dict_manager.dict(warmup_cache_dict)
+
+    alpha_beta_cache_dict = None
     
     # debug level
     logging.basicConfig(
@@ -300,26 +303,90 @@ if __name__ == "__main__":
     if sys.platform == "linux" or sys.platform == "darwin":
         mps.set_start_method("fork", force=True)
     
-    thein = sys.stdin.buffer.read()
-    thein = pickle.loads(thein)
-    output = alphabeta(*thein, alpha_beta_cache_dict)
+    # thein = sys.stdin.buffer.read()
+    # thein = pickle.loads(thein)
+    # output = alphabeta(*thein, alpha_beta_cache_dict)
     
-    output = pickle.dumps(output)
-    sys.stdout.buffer.write(output)
-    sys.stdout.buffer.flush()
+    # output = pickle.dumps(output)
+    # sys.stdout.buffer.write(output)
+    # sys.stdout.buffer.flush()
     
-    with open(warmup_cache_dict_fp, 'wb') as f:
-        pickle.dump(dict(alpha_beta_cache_dict), f)
+    # with open(warmup_cache_dict_fp, 'wb') as f:
+    #     pickle.dump(dict(alpha_beta_cache_dict), f)
     
     # ---LOCAL TEST---
-    # start_time = time.time()
+    start_time = time.time()
     
-    # node = StateNodeCaptain(*default_hero_pools, *default_hero_pools)
-    # node.add_hero("Axe", True, 3).add_hero("Tiny", True, 4).add_hero("Bane", False, -1).add_hero("Huskar", False, -1)
-    # output = alphabeta(node, 0, -999, 999, True, DEPTH_LIMIT, True, None)
-    # end_time = time.time()
-    # print(f"Process Time: {end_time - start_time:3f} sec.")
+    node = StateNodeCaptain(*default_hero_pools, *default_hero_pools, if_bp_first=True)
+    node.ban_hero('Chen')
+    print(f"Node round: {node.cur_round}")
     
+    node.ban_hero('Io')
+    print(f"Node round: {node.cur_round}")
+
+    node.ban_hero('Pangolier')
+    print(f"Node round: {node.cur_round}")
+
+    node.ban_hero('Dark Willow')
+    print(f"Node round: {node.cur_round}")
+
+    node.ban_hero('Dawnbreaker')
+    print(f"Node round: {node.cur_round}")
+
+    node.ban_hero('Grimstroke')
+    print(f"Node round: {node.cur_round}")
+
+    node.ban_hero('Disruptor')
+    print(f"Node round: {node.cur_round}")
+
+    node.add_hero('Axe', True, 3)
+    print(f"Node round: {node.cur_round}")
+
+    node.add_hero('Tiny', False, 4)
+    print(f"Node round: {node.cur_round}")
+
+    node.ban_hero('Bane')
+    print(f"Node round: {node.cur_round}")
+
+    node.ban_hero('Huskar')
+    print(f"Node round: {node.cur_round}")
+
+    node.ban_hero('Lina')
+
+    # round 13 B P
+    print(f"Node round: {node.cur_round}")
+    node.add_hero('Lion', False, 2)
+    print(f"Node round: {node.cur_round} after adding Lion")
+    # test here to see if double pick works
+
+    node.add_hero('Slark', True, 1).add_hero('Mars', True, 2)
+
+    # # round 16 B P
+    node.add_hero('Kez', False, 1)
+    node.add_hero('Muerta', False, 5)
+    # # print(f"Node round: {node.cur_round} after adding Muerta")
+    # # ! finish 17 case and then if depth limit = 1 will cause bugs
+ 
+    node.add_hero('Riki', True, 5) # 18 case
+    # node.ban_hero('Phantom Assassin')
+    # node.ban_hero('Juggernaut')
+    # node.ban_hero('Morphling') # oppo ban
+    # node.ban_hero('Weaver') # ally ban
+    # node.add_hero('Crystal Maiden', True, 4) # 23 case
+    # # print(f"Node round: {node.cur_round} after adding Riki")
+
+
+    print(f"Node round: {node.cur_round}")
+    print(f"Ally heros: {node.get_ally_hero_list()}")
+    print(f"Opponent heros: {node.get_opponent_hero_list()}")
+    print(f"Ban heros: {node.get_ban_hero_list()}")
+
+    output = alphabeta(node, 0, -999, 999, True, 2, True, None)
+    end_time = time.time()
+    print(f"Process Time: {end_time - start_time:3f} sec.")
+    
+    # -- end local test -- 
+
     # Eval records
     # DEPTH_LIMIT = 1 Round 3 Time: 04:35
     # DEPTH_LIMIT = 1 Round 3 With Heuristic Cache Time: 04:27

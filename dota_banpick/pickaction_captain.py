@@ -49,7 +49,6 @@ def maximum_assignment_heroes(hero_list_full, hero_round_list_full, fix_pos_list
         
         lang_scores = [] 
         for col_name in pos_pick_rate_col_names:
-            print(hero, col_name)
             lang_scores.append(lane_rate_info_dict[hero][col_name])
         G.append(lang_scores)
     
@@ -351,7 +350,11 @@ class StateNodeCaptain:
         if len(CAPTAIN_BP_ORDER) < self.cur_round + 1:
             next_next_order_code = None
         else:
-            next_next_order_code = CAPTAIN_BP_ORDER[self.cur_round + 1]
+            target_r = self.cur_round + 1
+            if target_r >= len(CAPTAIN_BP_ORDER):
+                next_next_order_code = None
+            else:
+                next_next_order_code = CAPTAIN_BP_ORDER[self.cur_round + 1]
         if next_next_order_code is not None:
             _, next_next_side_code, next_next_action_code = next_next_order_code.split(' ')
         else:
@@ -470,9 +473,13 @@ class StateNodeCaptain:
                 available_pos_lst = sorted(available_pos_lst)
                 round_pick_choice = list(
                         itertools.combinations(available_pos_lst, 2))
-
+            
             else:
                 raise ValueError("invalid is_next_a_big_turn value")
+            
+            if round_pick_choice == []:
+                round_pick_choice = list(
+                    itertools.combinations(available_pos_lst, 1))
                     
             # you can only pick under restriction
             for pick_choice in round_pick_choice:
@@ -513,7 +520,9 @@ class StateNodeCaptain:
                 else:
                     round_ban_choice = list(
                         itertools.combinations(available_pos_lst, 1))
-            
+            if round_ban_choice == []:
+                round_ban_choice = list(
+                    itertools.combinations(available_pos_lst, 1))
             # if next round < 9, then remove (1, 4), (3, 5), (4, 5) combo
             if next_round < 9:
                 round_ban_choice = [x for x in round_ban_choice if x not in EARLY_STAGE_NOT_CONSIDER_BAN_COMBO]
@@ -587,15 +596,16 @@ class StateNodeCaptain:
 
                 # update cur round at very last
                 if is_next_a_big_turn != 0:
-                    new_node.cur_round = next_round + 1
+                    new_node.cur_round = next_round + 2
                 else:
-                    new_node.cur_round = next_round
+                    new_node.cur_round = next_round + 1
                         
-
                 output_next_nodes_dict[str_pos_choice].append(new_node)
                 node_expansion_count += 1
         logging.info(f"node expansion with size {node_expansion_count}")
 
+
+        first_dict_list = list(first_dict.items())
         return output_next_nodes_dict, first_dict
 
 

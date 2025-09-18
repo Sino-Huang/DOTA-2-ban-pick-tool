@@ -19,7 +19,7 @@ import sys
 import time
 
 from natsort import natsorted
-from dota_banpick.config import ACTIVATE_SAVING_CACHE, PRUNE_WORST_HERO_NUM, SUGGESTION_NUM, counter_rate_matrix
+from dota_banpick.config import ACTIVATE_SAVING_CACHE, PRUNE_WORST_HERO_NUM, SUGGESTION_NUM, counter_rate_matrix,default_hero_pools, DEPTH_LIMIT
 from dota_banpick.pickaction import StateNode
 from dota_banpick.heuristic import calculate_heuristic
 from tqdm.auto import tqdm
@@ -334,16 +334,16 @@ if __name__ == "__main__":
     if sys.platform == "linux" or sys.platform == "darwin":
         mps.set_start_method("fork", force=True)
     
-    thein = sys.stdin.buffer.read()
-    thein = pickle.loads(thein)
-    output = alphabeta(*thein, alpha_beta_cache_dict)
+    # thein = sys.stdin.buffer.read()
+    # thein = pickle.loads(thein)
+    # output = alphabeta(*thein, alpha_beta_cache_dict)
     
-    output = pickle.dumps(output)
-    sys.stdout.buffer.write(output)
-    sys.stdout.buffer.flush()
+    # output = pickle.dumps(output)
+    # sys.stdout.buffer.write(output)
+    # sys.stdout.buffer.flush()
     
-    with open(warmup_cache_dict_fp, 'wb') as f:
-        pickle.dump(dict(alpha_beta_cache_dict), f)
+    # with open(warmup_cache_dict_fp, 'wb') as f:
+    #     pickle.dump(dict(alpha_beta_cache_dict), f)
     
     # ---LOCAL TEST---
     # start_time = time.time()
